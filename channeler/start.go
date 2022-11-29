@@ -84,13 +84,13 @@ func handleInput(
 	scanErr *bufio.Scanner,
 	terminator byte,
 ) {
+	defer close(chDone)
 	logger.Printf("starting scan of stdIn to forward to subprocess")
 	if terminator != 0 {
 		logger.Printf("command terminator == '%c'", terminator)
 	} else {
-		logger.Printf("no command terminator.")
+		logger.Printf("no command terminator")
 	}
-	defer close(chDone)
 	var line string
 	timer := time.NewTimer(timeout)
 	stillOpen := true
@@ -119,7 +119,7 @@ func handleInput(
 			}
 		case <-timer.C:
 			logger.Printf("timeout of %s elapsed awaiting stdIn", timeout)
-			logger.Print("why is client taking so long to issue another command?")
+			logger.Print("why is client taking so long to issue another command? sending error, abandoning stdIn.")
 			chDone <- fmt.Errorf(
 				"timeout of %s elapsed awaiting for input or close on stdin",
 				timeout)

@@ -75,7 +75,7 @@ func (eInf *execInfra) infraStart(d time.Duration) (err error) {
 		// No need for such a drain on stdOut, as we'll
 		// always want to parse it normally.
 		go func() {
-			logger.Println("no error sentinel; beginning drain of stdErr")
+			logger.Println("no error sentinel; establishing drain of stdErr")
 			for range eInf.channels.StdErr {
 			}
 		}()
@@ -107,6 +107,9 @@ func (eInf *execInfra) infraRun(d time.Duration, c Commander) error {
 	case <-gotSentinels:
 		logger.Printf("got sentinels after command %q", c.Command())
 		return nil
+	case err := <-eInf.channels.Done:
+		logger.Printf("the channeler ended unexpectedly with err: %s", err.Error())
+		return err
 	case err := <-eInf.chInfraErr:
 		logger.Println("got infra error in run call")
 		return err
@@ -133,8 +136,8 @@ func (eInf *execInfra) infraStop(d time.Duration, c bareCommand) error {
 	close(eInf.chInfraErr)
 	eInf.chInfraErr = nil // Assure that this will block if used in select.
 	select {
-	case possibleErr := <-eInf.channels.Done:
-		return possibleErr
+	case hopefullyNil := <-eInf.channels.Done:
+		return hopefullyNil
 	case <-time.After(d):
 		return fmt.Errorf("shell not done after %s", d)
 	}

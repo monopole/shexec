@@ -20,4 +20,4 @@ func (l logSink) Write(p []byte) (n int, err error) {
 }
 
 var logger = log.New(
-	&logSink{}, "CHANNELER: ", log.Ldate|log.Ltime|log.Lshortfile)
+	&logSink{}, "CHANNLER: ", log.Ldate|log.Ltime|log.Lshortfile)
