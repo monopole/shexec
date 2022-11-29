@@ -3,7 +3,7 @@ module github.com/monopole/shexec/scripter
 go 1.19
 
 require (
-	github.com/monopole/shexec/channeler v0.1.0
+	github.com/monopole/shexec/channeler v0.1.1
 	github.com/stretchr/testify v1.8.1
 )
 
