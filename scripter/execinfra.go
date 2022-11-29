@@ -105,7 +105,7 @@ func (eInf *execInfra) infraRun(d time.Duration, c Commander) error {
 	gotSentinels := eInf.fireOffSentinelFilters(c.ParseOut(), c.ParseErr())
 	select {
 	case <-gotSentinels:
-		logger.Printf("got sentinels after command %q!", c.Command())
+		logger.Printf("got sentinels after command %q", c.Command())
 		return nil
 	case err := <-eInf.chInfraErr:
 		logger.Println("got infra error in run call")
@@ -183,6 +183,7 @@ func (eInf *execInfra) fireOffSentinelFilters(
 			logger.Printf("awaiting stdOut sentinel")
 		}
 		sentinelWait.Wait()
+		logger.Printf("done with sentinelWait.Wait")
 		gotSentinels <- true
 	}()
 	return gotSentinels

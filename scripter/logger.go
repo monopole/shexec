@@ -31,4 +31,4 @@ func (l logSink) Write(p []byte) (n int, err error) {
 	return 0, nil
 }
 
-var logger = log.New(&logSink{}, "SHEXEC: ", log.Ldate|log.Ltime|log.Lshortfile)
+var logger = log.New(&logSink{}, "SCRIPTER: ", log.Ldate|log.Ltime|log.Lshortfile)
