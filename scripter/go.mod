@@ -3,13 +3,11 @@ module github.com/monopole/shexec/scripter
 go 1.19
 
 require (
-	github.com/monopole/shexec/channeler v0.0.0
+	github.com/monopole/shexec/channeler v0.1.0
 	github.com/stretchr/testify v1.8.1
 )
 
-replace github.com/monopole/shexec/conch => ../conch
-
-replace github.com/monopole/shexec/channeler => ../channeler
+// replace github.com/monopole/shexec/channeler => ../channeler
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
