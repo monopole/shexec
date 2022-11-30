@@ -1,16 +1,12 @@
 package shexec
 
+import "io"
+
 // DevNull is an io.WriteCloser that does nothing.
-var DevNull = &devNullDevice{}
+var DevNull io.WriteCloser = &discard{}
 
-// devNullDevice is an io.WriteCloser that does nothing.
-type devNullDevice struct {
-}
+// discard is an io.WriteCloser that does nothing.
+type discard struct{}
 
-func (dn *devNullDevice) Write(_ []byte) (int, error) {
-	return 0, nil
-}
-
-func (dn *devNullDevice) Close() error {
-	return nil
-}
+func (dn *discard) Write(x []byte) (int, error) { return len(x), nil }
+func (dn *discard) Close() error                { return nil }
