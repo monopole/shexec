@@ -84,70 +84,72 @@ func handleInput(
 	scanErr *bufio.Scanner,
 	terminator byte,
 ) {
+	const name = " stdIn"
 	defer close(chDone)
-	logger.Printf("stdIn; starting scan to forward to subprocess")
+	logger.Printf("%s; starting scan to forward to subprocess", name)
 	if terminator != 0 {
-		logger.Printf("stdIn; command terminator == '%c'", terminator)
+		logger.Printf("%s; command terminator == '%c'", name, terminator)
 	} else {
-		logger.Printf("stdIn; no command terminator")
+		logger.Printf("%s; no command terminator", name)
 	}
 	var line string
 	timer := time.NewTimer(timeout)
 	stillOpen := true
 	for stillOpen {
 		if !timer.Stop() {
-			logger.Printf("stdIn; sleepy timer draining")
+			logger.Printf("%s; sleepy timer draining", name)
 			<-timer.C
-			logger.Printf("stdIn; sleepy timer drained")
+			logger.Printf("%s; sleepy timer drained", name)
 		}
 		timer.Reset(timeout)
-		logger.Printf("stdIn; sleepy timer reset")
+		logger.Printf("%s; sleepy timer reset", name)
+		logger.Printf("%s; awaiting command", name)
 
 		select {
 		case line, stillOpen = <-chStdIn:
 			if stillOpen {
 				bytes := assureTermination(line, terminator)
-				logger.Printf("stdIn; issuing: %q", string(bytes))
+				logger.Printf("%s; issuing: %q", name, string(bytes))
 				if _, err := stdIn.Write(bytes); err != nil {
-					logger.Printf("stdIn; unable to write stdIn; %s", err.Error())
+					logger.Printf("%s; unable to write stdIn; %s", name, err.Error())
 					chDone <- fmt.Errorf("unable to write to stdIn; %w", err)
 					return
 				}
 			} else {
-				logger.Print("stdIn; detected external closure, shutting down!")
+				logger.Printf("%s; detected external closure, shutting down!", name)
 				chStdIn = nil
 			}
 		case <-timer.C:
-			logger.Printf("stdIn; sleepy timeout of %s elapsed", timeout)
-			logger.Print("stdIn; why is client taking so long to issue another command?")
-			logger.Print("stdIn; sending error, abandoning process.")
+			logger.Printf("%s; sleepy timeout of %s elapsed", name, timeout)
+			logger.Printf("%s; why is client taking so long to issue another command?", name)
+			logger.Printf("%s; sending error, abandoning process.", name)
 			chDone <- fmt.Errorf(
 				"timeout of %s elapsed awaiting for input or close on stdin",
 				timeout)
 			return
 		}
 	}
-	logger.Printf("stdIn; channel closed from the outside (presumably on purpose)")
+	logger.Printf("%s; channel closed from the outside (presumably on purpose)", name)
 	if err := stdIn.Close(); err != nil {
-		logger.Printf("stdIn; unable to close true stdIn")
+		logger.Printf("%s; unable to close true stdIn", name)
 		chDone <- fmt.Errorf("unable to close stdIn; %w", err)
 		return
 	}
 	// TODO: add timeout on these waits?
-	logger.Printf("stdIn; awaiting stdOut and stdErr scanner exit")
+	logger.Printf("%s; awaiting stdOut and stdErr scanner exit", name)
 	scanWg.Wait()
 	if err := cmdWait(); err != nil {
-		logger.Printf("cmd.Wait returns error: %s", err.Error())
+		logger.Printf("%s; cmd.Wait returns error: %s", name, err.Error())
 		chDone <- fmt.Errorf("cmd.Wait returns: %w", err)
 		return
 	}
 	if err := scanOut.Err(); err != nil {
-		logger.Printf("stdIn; stdOut scan error: %s", err.Error())
+		logger.Printf("%s; stdOut scan error: %s", name, err.Error())
 		chDone <- fmt.Errorf("stdout scan incomplete; %w", err)
 		return
 	}
 	if err := scanErr.Err(); err != nil {
-		logger.Printf("stdIn; stdErr scan error: %s", err.Error())
+		logger.Printf("%s; stdErr scan error: %s", name, err.Error())
 		chDone <- fmt.Errorf("stderr scan incomplete; %w", err)
 		return
 	}
@@ -161,7 +163,7 @@ func handleOutput(
 	name string,
 	scanner *bufio.Scanner,
 ) {
-	logger.Printf("%s; scanning...", name)
+	logger.Printf("%s; awaiting data...", name)
 	count := 0
 	timer := time.NewTimer(timeout)
 	for scanner.Scan() {
@@ -194,7 +196,9 @@ func handleOutput(
 			wg.Done()
 			return
 		}
+		logger.Printf("%s; awaiting data...", name)
 	}
+	logger.Printf("%s; scan done; closing forwarding channel", name)
 	close(chStream)
 	logger.Printf("%s; successfully consumed %d lines", name, count)
 	wg.Done()
