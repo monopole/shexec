@@ -210,10 +210,9 @@ func scanForSentinel(
 			// If the sentinel value is empty, this block never
 			// executes, so the stream will be continually consumed,
 			// which would be bad.
-			logger.Printf(
-				"scan %s; matched sentinel %q to end of line %q",
-				name, senValue, abbrev(line))
+			logger.Printf("scan %s; matched sentinel %q to end of line", name, senValue)
 			if len(p) > 0 {
+				logger.Printf("scan %s; writing partial line %q", name, abbrev(p))
 				if _, err := parser.Write([]byte(p)); err != nil {
 					chErr <- fmt.Errorf(
 						"problem writing partial %q to %s parser; %w", p, name, err)
@@ -227,7 +226,7 @@ func scanForSentinel(
 			}
 			sentWaiter.Done()
 			// This is the happy exit.
-			logger.Printf("scan %s; happy exit", name)
+			logger.Printf("scan %s; happily closed", name)
 			return
 		}
 		logger.Printf(

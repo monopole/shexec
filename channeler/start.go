@@ -96,12 +96,12 @@ func handleInput(
 	stillOpen := true
 	for stillOpen {
 		if !timer.Stop() {
-			logger.Printf("stdIn; timer draining")
+			logger.Printf("stdIn; sleepy timer draining")
 			<-timer.C
-			logger.Printf("stdIn; timer drained")
+			logger.Printf("stdIn; sleepy timer drained")
 		}
 		timer.Reset(timeout)
-		logger.Printf("stdIn; timer reset")
+		logger.Printf("stdIn; sleepy timer reset")
 
 		select {
 		case line, stillOpen = <-chStdIn:
@@ -118,7 +118,7 @@ func handleInput(
 				chStdIn = nil
 			}
 		case <-timer.C:
-			logger.Printf("stdIn; timeout of %s elapsed", timeout)
+			logger.Printf("stdIn; sleepy timeout of %s elapsed", timeout)
 			logger.Print("stdIn; why is client taking so long to issue another command?")
 			logger.Print("stdIn; sending error, abandoning process.")
 			chDone <- fmt.Errorf(
@@ -169,12 +169,12 @@ func handleOutput(
 		count++
 		logger.Printf("%s; read line #%d: %q", name, count, abbrev(line))
 		if !timer.Stop() {
-			logger.Printf("%s; timer draining", name)
+			logger.Printf("%s; backpressure timer draining", name)
 			<-timer.C
-			logger.Printf("%s; timer drained", name)
+			logger.Printf("%s; backpressure timer drained", name)
 		}
 		timer.Reset(timeout)
-		logger.Printf("%s; timer reset", name)
+		logger.Printf("%s; backpressure timer reset", name)
 		select {
 		case chStream <- line:
 			logger.Printf("%s; forwarded line", name)
@@ -186,7 +186,7 @@ func handleOutput(
 			// over Scan() won't finish, which means a call to
 			// cmd.Wait() will block.  Adding a timeout here to help
 			// diagnose that particular situation.
-			logger.Printf("%s; timeout of %s elapsed", name, timeout)
+			logger.Printf("%s; backpressure timeout of %s elapsed", name, timeout)
 			chDone <- fmt.Errorf(
 				"timeout of %s elapsed awaiting write to %s",
 				timeout, name)

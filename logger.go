@@ -11,9 +11,8 @@ import (
 var enableLogging = false
 
 func abbrev(x string) string {
-	const maxLen = 40
-	if len(x) > maxLen {
-		return x[0:maxLen-1] + "..."
+	if len(x) > channeler.AbbrevMaxLen {
+		return x[0:channeler.AbbrevMaxLen-1] + "..."
 	}
 	return x
 }
