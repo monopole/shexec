@@ -18,7 +18,7 @@ func consumeChannel(name string, ch <-chan string) {
 }
 
 func TestStartHappy(t *testing.T) {
-	chs, err := Start(&ChParams{
+	chs, err := Start(&Params{
 		Path: theShell,
 	})
 	assert.NoError(t, err)
@@ -32,7 +32,7 @@ func TestStartHappy(t *testing.T) {
 }
 
 func TestStartExitZero(t *testing.T) {
-	chs, err := Start(&ChParams{
+	chs, err := Start(&Params{
 		Path: theShell,
 	})
 	assert.NoError(t, err)
@@ -45,7 +45,7 @@ func TestStartExitZero(t *testing.T) {
 }
 
 func TestStartExitOne(t *testing.T) {
-	chs, err := Start(&ChParams{
+	chs, err := Start(&Params{
 		Path: theShell,
 	})
 	assert.NoError(t, err)
@@ -60,7 +60,7 @@ func TestStartExitOne(t *testing.T) {
 }
 
 func TestStartStallOnStdIn(t *testing.T) {
-	p := &ChParams{
+	p := &Params{
 		Path:        theShell,
 		ChTimeoutIn: 50 * time.Millisecond,
 	}
@@ -81,7 +81,7 @@ func TestStartStallOnStdIn(t *testing.T) {
 }
 
 func TestStartWithBackPressure(t *testing.T) {
-	p := &ChParams{
+	p := &Params{
 		Path: theShell,
 		// Use small buffer to create backpressure.
 		BuffSizeOut:  1,

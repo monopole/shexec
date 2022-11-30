@@ -1,4 +1,4 @@
-package scripter
+package shexec
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ type Commander interface {
 	Command() string
 	// ParseOut will be written with whatever comes out of
 	// the shell's stdOut as the result of issuing Command.
-	// Close will be called when the executor believes that
+	// Close will be called when the shell believes that
 	// all output has been obtained.
 	ParseOut() io.WriteCloser
 	// ParseErr is like ParseOut, except stdErr is used instead of stdOut.

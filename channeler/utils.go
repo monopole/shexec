@@ -1,6 +1,6 @@
 package channeler
 
-const NewLineCh = '\n'
+const newLineChar = '\n'
 
 // assureTermination assures correct command line termination.
 // The line will always end with newline, but before that there
@@ -9,9 +9,9 @@ func assureTermination(line string, terminator byte) []byte {
 	c := []byte(line)
 	if len(c) == 0 {
 		// TODO: treat as an error?
-		return []byte{NewLineCh}
+		return []byte{newLineChar}
 	}
-	if c[len(c)-1] == NewLineCh {
+	if c[len(c)-1] == newLineChar {
 		// Slice it off avoid confusion; will replace it momentarily.
 		// This doesn't change the Cap() of the slice.
 		c = c[:len(c)-1]
@@ -20,5 +20,5 @@ func assureTermination(line string, terminator byte) []byte {
 		c = append(c, terminator)
 	}
 	// Always, always end with a newLine.
-	return append(c, NewLineCh)
+	return append(c, newLineChar)
 }

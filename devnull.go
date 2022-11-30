@@ -1,4 +1,4 @@
-package scripter
+package shexec
 
 // DevNull is an io.WriteCloser that does nothing.
 var DevNull = &devNullDevice{}

@@ -1,11 +1,11 @@
-package scripter
+package shexec
 
 import (
 	"fmt"
 	"time"
 )
 
-// execStateOff implements the "off" state of the Executor.
+// execStateOff implements the "off" state of the Shell.
 type execStateOff struct {
 	infra *execInfra
 }

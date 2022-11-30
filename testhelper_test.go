@@ -1,4 +1,4 @@
-package scripter_test
+package shexec_test
 
 import (
 	"fmt"

@@ -1,11 +1,11 @@
-package scripter_test
+package shexec_test
 
 import (
 	"io"
 	"testing"
 
+	. "github.com/monopole/shexec"
 	"github.com/monopole/shexec/channeler"
-	. "github.com/monopole/shexec/scripter"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -13,8 +13,8 @@ var commandStatus = newPrintingCommander("status")
 
 func makeConchParams() Parameters {
 	return Parameters{
-		ChParams: channeler.ChParams{
-			WorkingDir: "../conch",
+		Params: channeler.Params{
+			WorkingDir: "./conch",
 			Path:       "go",
 			Args: []string{
 				"run", ".",
@@ -32,7 +32,7 @@ func makeConchParams() Parameters {
 }
 
 func TestShellBadPath(t *testing.T) {
-	sh := NewShell(Parameters{ChParams: channeler.ChParams{Path: "beamMeUpScotty"}})
+	sh := NewShell(Parameters{Params: channeler.Params{Path: "beamMeUpScotty"}})
 	if err := sh.Start(timeOutShort); assert.Error(t, err) {
 		assert.Contains(t, err.Error(), `path "beamMeUpScotty" not available; exit status 127`)
 	}
@@ -40,7 +40,7 @@ func TestShellBadPath(t *testing.T) {
 
 func TestShellNoSentinelOut(t *testing.T) {
 	sh := NewShell(Parameters{
-		ChParams: channeler.ChParams{
+		Params: channeler.Params{
 			Path: "go",
 		}})
 	err := sh.Start(timeOutShort)
@@ -50,7 +50,7 @@ func TestShellNoSentinelOut(t *testing.T) {
 
 func TestShellNoSentinelOutValue(t *testing.T) {
 	sh := NewShell(Parameters{
-		ChParams:    channeler.ChParams{Path: "go"},
+		Params:      channeler.Params{Path: "go"},
 		SentinelOut: Sentinel{C: "echo " + unlikelyWord},
 	})
 	if err := sh.Start(timeOutShort); assert.Error(t, err) {

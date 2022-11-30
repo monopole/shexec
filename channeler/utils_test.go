@@ -10,10 +10,10 @@ import (
 func TestAssureTermination(t *testing.T) {
 	var empty byte // intentionally left uninitialized
 	const (
-		semiColonCh = ';'
-		hello       = "hello"
-		semiColon   = string(semiColonCh)
-		newLine     = string(NewLineCh)
+		semiColonChar = ';'
+		hello         = "hello"
+		semiColon     = string(semiColonChar)
+		newLine       = string(newLineChar)
 	)
 	testCases := map[string]struct {
 		line     string
@@ -23,27 +23,27 @@ func TestAssureTermination(t *testing.T) {
 		// FWIW: empty lines are empty lines (no semicolon).
 		"t0": {
 			line:     "",
-			term:     semiColonCh,
+			term:     semiColonChar,
 			expected: newLine,
 		},
 		"t1": {
 			line:     hello,
-			term:     semiColonCh,
+			term:     semiColonChar,
 			expected: hello + semiColon + newLine,
 		},
 		"t2": {
 			line:     hello + semiColon,
-			term:     semiColonCh,
+			term:     semiColonChar,
 			expected: hello + semiColon + newLine,
 		},
 		"t3": {
 			line:     hello + newLine,
-			term:     semiColonCh,
+			term:     semiColonChar,
 			expected: hello + semiColon + newLine,
 		},
 		"t4": {
 			line:     hello + semiColon + newLine,
-			term:     semiColonCh,
+			term:     semiColonChar,
 			expected: hello + semiColon + newLine,
 		},
 		"t5": {

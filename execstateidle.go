@@ -1,11 +1,11 @@
-package scripter
+package shexec
 
 import (
 	"fmt"
 	"time"
 )
 
-// execStateIdle implements the "idle" state of the Executor.
+// execStateIdle implements the "idle" state of the Shell.
 type execStateIdle struct {
 	infra *execInfra
 }

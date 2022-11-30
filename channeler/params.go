@@ -8,12 +8,12 @@ import (
 	"time"
 )
 
-// ChParams captures all parameters to channeler.Start.
+// Params captures all parameters to channeler.Start.
 // It's a mix of subprocess parameters, like Path and Args,
 // and orchestration parameters like buffer sizes and timeouts.
-type ChParams struct {
+type Params struct {
 	// Path is either the absolute path to the executable, or a $PATH
-	// relative command name.
+	// relative command name.  This is the shell being run.
 	Path string
 
 	// Args has the arguments, flags and flag arguments for the
@@ -72,7 +72,7 @@ const (
 	defaultChTimeoutIn = 12 * time.Hour
 )
 
-func (p *ChParams) Validate() error {
+func (p *Params) Validate() error {
 	p.setDefaults()
 	if err := p.validateWorkDir(); err != nil {
 		return err
@@ -80,7 +80,7 @@ func (p *ChParams) Validate() error {
 	return p.validatePath()
 }
 
-func (p *ChParams) setDefaults() {
+func (p *Params) setDefaults() {
 	if p.BuffSizeIn < 1 {
 		p.BuffSizeIn = defaultBuffSizeIn
 	}
@@ -98,7 +98,7 @@ func (p *ChParams) setDefaults() {
 	}
 }
 
-func (p *ChParams) validateWorkDir() (err error) {
+func (p *Params) validateWorkDir() (err error) {
 	p.WorkingDir, err = filepath.Abs(p.WorkingDir)
 	if err != nil {
 		return err
@@ -114,14 +114,14 @@ func (p *ChParams) validateWorkDir() (err error) {
 	return nil
 }
 
-func (p *ChParams) validatePath() (err error) {
+func (p *Params) validatePath() (err error) {
 	if p.Path == "" {
 		return fmt.Errorf("must specify Path to the executable to run")
 	}
 	return errIfNoCommand(p.Path)
 }
 
-func (p *ChParams) olderValidate() error {
+func (p *Params) olderValidate() error {
 	if !filepath.IsAbs(p.Path) {
 		p.Path = filepath.Join(p.WorkingDir, p.Path)
 	}

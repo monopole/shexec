@@ -1,4 +1,4 @@
-package scripter
+package shexec
 
 import (
 	"time"

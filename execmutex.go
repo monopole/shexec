@@ -1,12 +1,12 @@
-package scripter
+package shexec
 
 import (
 	"sync"
 	"time"
 )
 
-// execMutex implements Executor.
-// It allows for safe use of an Executor in a CSP environment.
+// execMutex implements Shell.
+// It allows for safe use of a Shell in a CSP environment.
 // Instead of having a state variable and branching to distinguish states,
 // execMutex allows each state to have a distinct implementation.
 // The states share common code and infrastructure via execInfra.

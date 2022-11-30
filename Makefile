@@ -8,8 +8,7 @@ all: lint test
 
 .PHONY: test
 test:
-	cd channeler; go test ./...
-	cd scripter; go test ./...
+	go test ./...
 
 report: $(GOBIN)/goreportcard-cli
 	$(GOBIN)/goreportcard-cli -v

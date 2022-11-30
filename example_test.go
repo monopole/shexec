@@ -1,10 +1,10 @@
-package scripter_test
+package shexec_test
 
 import (
 	"fmt"
 
+	. "github.com/monopole/shexec"
 	"github.com/monopole/shexec/channeler"
-	. "github.com/monopole/shexec/scripter"
 )
 
 const unlikelyWord = "supercalifragilisticexpialidocious"
@@ -12,7 +12,7 @@ const unlikelyWord = "supercalifragilisticexpialidocious"
 // An example using /bin/sh, a shell that's available on most platforms.
 func Example_binSh() {
 	sh := NewShell(Parameters{
-		ChParams: channeler.ChParams{
+		Params: channeler.Params{
 			Path: "/bin/sh",
 		},
 		SentinelOut: Sentinel{
@@ -43,8 +43,8 @@ which find
 
 // The tests below require the "conch" shell.
 // As written, they require that
-// * The go program is installed.
-// * Tests are run from the top of the repo, such that ../conch is below you.
+// * The `go` program is installed.
+// * Tests are run from the top of the repo, such that ./conch is below you.
 
 var (
 	// The version command is a good stdOut sentinel for conch.
@@ -63,8 +63,8 @@ var (
 // An error free run using the (locally defined) conch shell.
 func Example_basicRun() {
 	sh := NewShell(Parameters{
-		ChParams: channeler.ChParams{
-			WorkingDir: "../conch",
+		Params: channeler.Params{
+			WorkingDir: "./conch",
 			Path:       "go",
 			Args: []string{
 				"run", ".",
@@ -86,8 +86,8 @@ func Example_basicRun() {
 // A shell that crashes on startup.
 func Example_subprocessFailOnStartup() {
 	sh := NewShell(Parameters{
-		ChParams: channeler.ChParams{
-			WorkingDir: "../conch",
+		Params: channeler.Params{
+			WorkingDir: "./conch",
 			Path:       "go",
 			Args: []string{
 				"run", ".",
@@ -106,8 +106,8 @@ func Example_subprocessFailOnStartup() {
 // A command takes too long and fails as a result.
 func Example_subprocessTakesTooLong() {
 	sh := NewShell(Parameters{
-		ChParams: channeler.ChParams{
-			WorkingDir: "../conch",
+		Params: channeler.Params{
+			WorkingDir: "./conch",
 			Path:       "go",
 			Args: []string{
 				"run", ".",
@@ -131,8 +131,8 @@ func Example_subprocessTakesTooLong() {
 // A shell spits output to stderr.
 func Example_subprocessSurvivableError() {
 	sh := NewShell(Parameters{
-		ChParams: channeler.ChParams{
-			WorkingDir: "../conch",
+		Params: channeler.Params{
+			WorkingDir: "./conch",
 			Path:       "go",
 			Args: []string{
 				"run", ".",
@@ -184,8 +184,8 @@ func Example_subprocessSurvivableError() {
 // A shell that crashes, and is then restarted.
 func Example_subprocessNonSurvivableError() {
 	sh := NewShell(Parameters{
-		ChParams: channeler.ChParams{
-			WorkingDir: "../conch",
+		Params: channeler.Params{
+			WorkingDir: "./conch",
 			Path:       "go",
 			Args: []string{
 				"run", ".",

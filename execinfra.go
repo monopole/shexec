@@ -1,4 +1,4 @@
-package scripter
+package shexec
 
 import (
 	"fmt"
@@ -17,7 +17,7 @@ func NewShell(p Parameters) Shell {
 			if err := p.Validate(); err != nil {
 				return nil, err
 			}
-			return channeler.Start(&p.ChParams)
+			return channeler.Start(&p.Params)
 		},
 		p.SentinelOut,
 		p.SentinelErr,
@@ -127,10 +127,10 @@ func (eInf *execInfra) infraStop(d time.Duration, c bareCommand) error {
 			"successfully enqueued stop command %q", c)
 	} else {
 		logger.Printf("in stop, no final command")
-		// TODO: a possible problem here is that if the last command sent
+		// A possible problem here is that if the last command sent
 		// was the error sentinel, then the process will exit with whatever
 		// code sits in $?, likely 127 ("command not found").
-		// To avoid this, send the error sentinel before the out sentinel.
+		// To avoid this, send the error sentinel _before_ the out sentinel.
 	}
 	close(eInf.channels.StdIn)
 	close(eInf.chInfraErr)
@@ -139,7 +139,7 @@ func (eInf *execInfra) infraStop(d time.Duration, c bareCommand) error {
 	case hopefullyNil := <-eInf.channels.Done:
 		return hopefullyNil
 	case <-time.After(d):
-		return fmt.Errorf("shell not done after %s", d)
+		return fmt.Errorf("stop failurel; shell not done after %s", d)
 	}
 }
 

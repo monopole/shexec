@@ -1,9 +1,9 @@
-package scripter_test
+package shexec_test
 
 import (
 	"testing"
 
-	. "github.com/monopole/shexec/scripter"
+	. "github.com/monopole/shexec"
 	"github.com/stretchr/testify/assert"
 )
 

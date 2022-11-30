@@ -1,14 +1,14 @@
-package scripter
+package shexec
 
 import (
 	"fmt"
 	"github.com/monopole/shexec/channeler"
 )
 
-// Parameters is a bag of parameters for Executor.
+// Parameters is a bag of parameters for a Shell instance.
 // See individual fields for their explanation.
 type Parameters struct {
-	channeler.ChParams
+	channeler.Params
 
 	// SentinelOut holds the command sent to the shell after every
 	// command other than the exit command.
@@ -30,7 +30,7 @@ type Parameters struct {
 
 // Validate returns an error if there's a problem in the Parameters.
 func (p *Parameters) Validate() error {
-	if err := p.ChParams.Validate(); err != nil {
+	if err := p.Params.Validate(); err != nil {
 		return err
 	}
 	if err := p.SentinelOut.Validate(); err != nil {

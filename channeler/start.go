@@ -12,7 +12,7 @@ import (
 // Start starts a shell subprocess, and returns all the channels needed
 // to interact with and control it.
 // To stop the shell, close it's input channel.
-func Start(p *ChParams) (*Channels, error) {
+func Start(p *Params) (*Channels, error) {
 	if err := p.Validate(); err != nil {
 		return nil, err
 	}
