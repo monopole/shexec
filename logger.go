@@ -10,16 +10,22 @@ import (
 // enableLogging can be set to true to see detailed logging.
 var enableLogging = false
 
+func abbrev(x string) string {
+	const maxLen = 40
+	if len(x) > maxLen {
+		return x[0:maxLen-1] + "..."
+	}
+	return x
+}
+
 // VerboseLoggingEnable enables detailed logging.
 func VerboseLoggingEnable() {
-	enableLogging = true
-	channeler.VerboseLoggingEnabled = true
+	enableLogging, channeler.VerboseLoggingEnabled = true, true
 }
 
 // VerboseLoggingDisable disables detailed logging.
 func VerboseLoggingDisable() {
-	enableLogging = false
-	channeler.VerboseLoggingEnabled = false
+	enableLogging, channeler.VerboseLoggingEnabled = false, false
 }
 
 type logSink struct{}
@@ -31,4 +37,4 @@ func (l logSink) Write(p []byte) (n int, err error) {
 	return 0, nil
 }
 
-var logger = log.New(&logSink{}, "SCRIPTER: ", log.Ldate|log.Ltime|log.Lshortfile)
+var logger = log.New(&logSink{}, "SHELL: ", log.Ldate|log.Ltime|log.Lshortfile)

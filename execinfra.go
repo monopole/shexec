@@ -75,19 +75,19 @@ func (eInf *execInfra) infraStart(d time.Duration) (err error) {
 		// No need for such a drain on stdOut, as we'll
 		// always want to parse it normally.
 		go func() {
-			logger.Println("no error sentinel; establishing drain of stdErr")
+			logger.Println("infraStart; no error sentinel; establishing drain of stdErr")
 			for range eInf.channels.StdErr {
 			}
 		}()
 	}
-	logger.Println("testing sentinels to make sure they work")
+	logger.Println("infraStart; testing sentinels to make sure they work")
 	gotSentinels := eInf.fireOffSentinelFilters(DevNull, DevNull)
 	select {
 	case <-gotSentinels:
-		logger.Println("got sentinels at startup, yay")
+		logger.Println("infraStart; got sentinels at startup, yay")
 		return nil
 	case err = <-eInf.chInfraErr:
-		logger.Println("got infra error in start call")
+		logger.Println("infraStart; got infra error in start call")
 		return err
 	case <-time.After(d):
 		return fmt.Errorf("starting, but no sentinels found after %s", d)
@@ -98,22 +98,23 @@ func (eInf *execInfra) infraRun(d time.Duration, c Commander) error {
 	if c == nil {
 		return fmt.Errorf("must specify a non-nil commander to Run")
 	}
-	logger.Printf("starting run - sending: %q", c.Command())
+	logger.Printf("infraRun; starting run - sending: %q", c.Command())
 	eInf.channels.StdIn <- c.Command()
 	logger.Printf(
-		"successfully enqueued command %q", c.Command())
+		"infraRun; successfully enqueued command %q", c.Command())
 	gotSentinels := eInf.fireOffSentinelFilters(c.ParseOut(), c.ParseErr())
 	select {
 	case <-gotSentinels:
-		logger.Printf("got sentinels after command %q", c.Command())
+		logger.Printf("infraRun; got sentinels after command %q", c.Command())
 		return nil
 	case err := <-eInf.channels.Done:
-		logger.Printf("the channeler ended unexpectedly with err: %s", err.Error())
+		logger.Printf("infraRun; channels.Done ended unexpectedly with err: %s", err.Error())
 		return err
 	case err := <-eInf.chInfraErr:
-		logger.Println("got infra error in run call")
+		logger.Println("infraRun; got infra error in run call")
 		return err
 	case <-time.After(d):
+		logger.Printf("infraRun; no sentinels found after %s", d)
 		return fmt.Errorf(
 			"running %q, no sentinels found after %s", c.Command(), d)
 	}
@@ -121,12 +122,11 @@ func (eInf *execInfra) infraRun(d time.Duration, c Commander) error {
 
 func (eInf *execInfra) infraStop(d time.Duration, c bareCommand) error {
 	if c != "" {
-		logger.Printf("in stop, sending final command %q to stdin", c)
+		logger.Printf("infraStop; sending final command %q to stdin", c)
 		eInf.channels.StdIn <- string(c)
-		logger.Printf(
-			"successfully enqueued stop command %q", c)
+		logger.Printf("infraStop; successfully enqueued stop command %q", c)
 	} else {
-		logger.Printf("in stop, no final command")
+		logger.Printf("infraStop; no final command")
 		// A possible problem here is that if the last command sent
 		// was the error sentinel, then the process will exit with whatever
 		// code sits in $?, likely 127 ("command not found").
@@ -137,8 +137,10 @@ func (eInf *execInfra) infraStop(d time.Duration, c bareCommand) error {
 	eInf.chInfraErr = nil // Assure that this will block if used in select.
 	select {
 	case hopefullyNil := <-eInf.channels.Done:
+		logger.Printf("infraStop; signal on Done = %s", hopefullyNil)
 		return hopefullyNil
 	case <-time.After(d):
+		logger.Printf("infraStop; timeout of %s expired", d)
 		return fmt.Errorf("stop failurel; shell not done after %s", d)
 	}
 }
@@ -159,10 +161,10 @@ func (eInf *execInfra) fireOffSentinelFilters(
 	if eInf.haveErrSentinel() {
 		sentinelWait.Add(1)
 		logger.Printf(
-			"sending sentinelErr command %q to stdIn", eInf.sentinelErr.C)
+			"fire; sending sentinelErr command %q to stdIn", eInf.sentinelErr.C)
 		eInf.channels.StdIn <- eInf.sentinelErr.C
 		logger.Printf(
-			"successfully enqueued sentinelErr command %q", eInf.sentinelErr.C)
+			"fire; successfully enqueued sentinelErr command %q", eInf.sentinelErr.C)
 		go scanForSentinel(
 			eInf.channels.StdErr, "stdErr", &sentinelWait, stdErr,
 			eInf.sentinelErr.V, eInf.chInfraErr)
@@ -170,10 +172,10 @@ func (eInf *execInfra) fireOffSentinelFilters(
 
 	sentinelWait.Add(1)
 	logger.Printf(
-		"sending sentinelOut command %q to stdIn", eInf.sentinelOut.C)
+		"fire; sending sentinelOut command %q to stdIn", eInf.sentinelOut.C)
 	eInf.channels.StdIn <- eInf.sentinelOut.C
 	logger.Printf(
-		"successfully enqueued sentinelOut command %q", eInf.sentinelOut.C)
+		"fire; successfully enqueued sentinelOut command %q", eInf.sentinelOut.C)
 	go scanForSentinel(
 		eInf.channels.StdOut, "stdOut", &sentinelWait, stdOut,
 		eInf.sentinelOut.V, eInf.chInfraErr)
@@ -181,12 +183,12 @@ func (eInf *execInfra) fireOffSentinelFilters(
 	gotSentinels := make(chan bool)
 	go func() {
 		if eInf.haveErrSentinel() {
-			logger.Printf("awaiting both sentinels")
+			logger.Printf("fire; awaiting both sentinels")
 		} else {
-			logger.Printf("awaiting stdOut sentinel")
+			logger.Printf("fire; awaiting stdOut sentinel")
 		}
 		sentinelWait.Wait()
-		logger.Printf("done with sentinelWait.Wait")
+		logger.Printf("fire; done with sentinelWait.Wait")
 		gotSentinels <- true
 	}()
 	return gotSentinels
@@ -200,17 +202,17 @@ func scanForSentinel(
 	senValue string,
 	chErr chan<- error,
 ) {
-	logger.Printf("beginning scan of %s for sentinel value %q", name, senValue)
+	logger.Printf("scan %s; looking for sentinel value %q", name, senValue)
 	for line := range stream {
-		logger.Printf("In %s stream got line: %q", name, line)
+		logger.Printf("scan %s; got line: %q", name, abbrev(line))
 		if p := strings.TrimSuffix(line, senValue); len(p) < len(line) {
 			// Sentinel value found, so immediately stop reading stream.
 			// If the sentinel value is empty, this block never
 			// executes, so the stream will be continually consumed,
 			// which would be bad.
 			logger.Printf(
-				"In %s stream matched sentinel value %q to end of line %q",
-				name, senValue, line)
+				"scan %s; matched sentinel %q to end of line %q",
+				name, senValue, abbrev(line))
 			if len(p) > 0 {
 				if _, err := parser.Write([]byte(p)); err != nil {
 					chErr <- fmt.Errorf(
@@ -218,19 +220,19 @@ func scanForSentinel(
 					return
 				}
 			}
-			logger.Printf("sentinel in hand, closing %s parser", name)
+			logger.Printf("scan %s; sentinel in hand, closing", name)
 			if err := parser.Close(); err != nil {
 				chErr <- fmt.Errorf("problem closing %s parser; %w", name, err)
 				return
 			}
 			sentWaiter.Done()
 			// This is the happy exit.
-			logger.Printf("happily exiting %s stream scanner", name)
+			logger.Printf("scan %s; happy exit", name)
 			return
 		}
 		logger.Printf(
-			"In %s stream, no sentinel value %q ending line %q",
-			name, senValue, line)
+			"scan %s; no sentinel value %q ending line %q",
+			name, senValue, abbrev(line))
 		// Pass the data on.
 		if _, err := parser.Write([]byte(line)); err != nil {
 			chErr <- fmt.Errorf(
@@ -238,7 +240,7 @@ func scanForSentinel(
 			return
 		}
 	}
-	logger.Printf("stream %s ended too soon", name)
+	logger.Printf("scan %s; stream ended too soon", name)
 	// Stream ended too soon. This is the unhappy exit.
 	// It's likely that the subprocess crashed.
 	chErr <- fmt.Errorf("%s closed before sentinel %q found", name, senValue)

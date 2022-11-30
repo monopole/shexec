@@ -85,64 +85,69 @@ func handleInput(
 	terminator byte,
 ) {
 	defer close(chDone)
-	logger.Printf("starting scan of stdIn to forward to subprocess")
+	logger.Printf("stdIn; starting scan to forward to subprocess")
 	if terminator != 0 {
-		logger.Printf("command terminator == '%c'", terminator)
+		logger.Printf("stdIn; command terminator == '%c'", terminator)
 	} else {
-		logger.Printf("no command terminator")
+		logger.Printf("stdIn; no command terminator")
 	}
 	var line string
 	timer := time.NewTimer(timeout)
 	stillOpen := true
 	for stillOpen {
 		if !timer.Stop() {
-			logger.Printf("input timer draining")
+			logger.Printf("stdIn; timer draining")
 			<-timer.C
-			logger.Printf("input timer drained")
+			logger.Printf("stdIn; timer drained")
 		}
 		timer.Reset(timeout)
-		logger.Printf("input timer reset")
+		logger.Printf("stdIn; timer reset")
 
 		select {
 		case line, stillOpen = <-chStdIn:
 			if stillOpen {
 				bytes := assureTermination(line, terminator)
-				logger.Printf("to stdIn issuing command %q", string(bytes))
-				_, err := stdIn.Write(bytes)
-				if err != nil {
+				logger.Printf("stdIn; issuing: %q", string(bytes))
+				if _, err := stdIn.Write(bytes); err != nil {
+					logger.Printf("stdIn; unable to write stdIn; %s", err.Error())
 					chDone <- fmt.Errorf("unable to write to stdIn; %w", err)
 					return
 				}
 			} else {
-				logger.Print("detected external closure of stdIn; closing down!")
+				logger.Print("stdIn; detected external closure, shutting down!")
 				chStdIn = nil
 			}
 		case <-timer.C:
-			logger.Printf("timeout of %s elapsed awaiting stdIn", timeout)
-			logger.Print("why is client taking so long to issue another command? sending error, abandoning stdIn.")
+			logger.Printf("stdIn; timeout of %s elapsed", timeout)
+			logger.Print("stdIn; why is client taking so long to issue another command?")
+			logger.Print("stdIn; sending error, abandoning process.")
 			chDone <- fmt.Errorf(
 				"timeout of %s elapsed awaiting for input or close on stdin",
 				timeout)
 			return
 		}
 	}
-	logger.Printf("the stdIn channel was closed from the outside")
+	logger.Printf("stdIn; channel closed from the outside (presumably on purpose)")
 	if err := stdIn.Close(); err != nil {
+		logger.Printf("stdIn; unable to close true stdIn")
 		chDone <- fmt.Errorf("unable to close stdIn; %w", err)
 		return
 	}
 	// TODO: add timeout on these waits?
+	logger.Printf("stdIn; awaiting stdOut and stdErr scanner exit")
 	scanWg.Wait()
 	if err := cmdWait(); err != nil {
-		logger.Printf("cmd.Wait returns: %s", err.Error())
+		logger.Printf("cmd.Wait returns error: %s", err.Error())
 		chDone <- fmt.Errorf("cmd.Wait returns: %w", err)
 		return
 	}
 	if err := scanOut.Err(); err != nil {
+		logger.Printf("stdIn; stdOut scan error: %s", err.Error())
 		chDone <- fmt.Errorf("stdout scan incomplete; %w", err)
 		return
 	}
 	if err := scanErr.Err(); err != nil {
+		logger.Printf("stdIn; stdErr scan error: %s", err.Error())
 		chDone <- fmt.Errorf("stderr scan incomplete; %w", err)
 		return
 	}
@@ -156,22 +161,23 @@ func handleOutput(
 	name string,
 	scanner *bufio.Scanner,
 ) {
-	logger.Printf("scanning %s...", name)
+	logger.Printf("%s; scanning...", name)
 	count := 0
 	timer := time.NewTimer(timeout)
 	for scanner.Scan() {
 		line := scanner.Text()
 		count++
-		logger.Printf("from %s read line #%d: %q", name, count, line)
+		logger.Printf("%s; read line #%d: %q", name, count, abbrev(line))
 		if !timer.Stop() {
-			logger.Printf("%s timer draining", name)
+			logger.Printf("%s; timer draining", name)
 			<-timer.C
-			logger.Printf("%s timer drained", name)
+			logger.Printf("%s; timer drained", name)
 		}
 		timer.Reset(timeout)
-		logger.Printf("%s timer reset", name)
+		logger.Printf("%s; timer reset", name)
 		select {
 		case chStream <- line:
+			logger.Printf("%s; forwarded line", name)
 			// Yay, whatever is reading this accepted the output.
 		case <-timer.C:
 			// Something should drain chStream, even if only to discard
@@ -180,6 +186,7 @@ func handleOutput(
 			// over Scan() won't finish, which means a call to
 			// cmd.Wait() will block.  Adding a timeout here to help
 			// diagnose that particular situation.
+			logger.Printf("%s; timeout of %s elapsed", name, timeout)
 			chDone <- fmt.Errorf(
 				"timeout of %s elapsed awaiting write to %s",
 				timeout, name)
@@ -189,6 +196,6 @@ func handleOutput(
 		}
 	}
 	close(chStream)
-	logger.Printf("successfully consumed %d lines from %s.", count, name)
+	logger.Printf("%s; successfully consumed %d lines", name, count)
 	wg.Done()
 }

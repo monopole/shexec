@@ -11,6 +11,14 @@ var VerboseLoggingEnabled = false
 
 type logSink struct{}
 
+func abbrev(x string) string {
+	const maxLen = 40
+	if len(x) > maxLen {
+		return x[0:maxLen-1] + "..."
+	}
+	return x
+}
+
 func (l logSink) Write(p []byte) (n int, err error) {
 	if //goland:noinspection GoBoolExpressions
 	VerboseLoggingEnabled {
@@ -19,5 +27,4 @@ func (l logSink) Write(p []byte) (n int, err error) {
 	return 0, nil
 }
 
-var logger = log.New(
-	&logSink{}, "CHANNLER: ", log.Ldate|log.Ltime|log.Lshortfile)
+var logger = log.New(&logSink{}, "CHNLR: ", log.Ldate|log.Ltime|log.Lshortfile)
