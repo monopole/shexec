@@ -98,7 +98,7 @@ func (eInf *execInfra) infraRun(d time.Duration, c Commander) error {
 	if c == nil {
 		return fmt.Errorf("must specify a non-nil commander to Run")
 	}
-	logger.Printf("infraRun; starting run - sending: %q", c.Command())
+	logger.Printf("infraRun; starting: %q", c.Command())
 	eInf.channels.StdIn <- c.Command()
 	logger.Printf(
 		"infraRun; successfully enqueued command %q", c.Command())
@@ -202,7 +202,7 @@ func scanForSentinel(
 	senValue string,
 	chErr chan<- error,
 ) {
-	logger.Printf("scan %s; looking for sentinel value %q", name, senValue)
+	logger.Printf("scan %s; awaiting process output", name)
 	for line := range stream {
 		logger.Printf("scan %s; got line: %q", name, abbrev(line))
 		if p := strings.TrimSuffix(line, senValue); len(p) < len(line) {
@@ -230,14 +230,15 @@ func scanForSentinel(
 			return
 		}
 		logger.Printf(
-			"scan %s; no sentinel value %q ending line %q",
-			name, senValue, abbrev(line))
+			"scan %s; at end of line found no sentinel value %q", name, senValue)
 		// Pass the data on.
+		logger.Printf("scan %s; forwarding line", name)
 		if _, err := parser.Write([]byte(line)); err != nil {
 			chErr <- fmt.Errorf(
 				"problem writing line %q to %s parser; %w", line, name, err)
 			return
 		}
+		logger.Printf("scan %s; awaiting process output", name)
 	}
 	logger.Printf("scan %s; stream ended too soon", name)
 	// Stream ended too soon. This is the unhappy exit.
