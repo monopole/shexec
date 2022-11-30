@@ -11,7 +11,7 @@ var VerboseLoggingEnabled = false
 
 type logSink struct{}
 
-const AbbrevMaxLen = 65
+const AbbrevMaxLen = 70
 
 func abbrev(x string) string {
 	if len(x) > AbbrevMaxLen {

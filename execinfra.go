@@ -100,12 +100,12 @@ func (eInf *execInfra) infraRun(d time.Duration, c Commander) error {
 	}
 	logger.Printf("infraRun; starting: %q", c.Command())
 	eInf.channels.StdIn <- c.Command()
-	logger.Printf(
-		"infraRun; successfully enqueued command %q", c.Command())
+	logger.Printf("infraRun; enqueued command %s", abbrev(c.Command()))
 	gotSentinels := eInf.fireOffSentinelFilters(c.ParseOut(), c.ParseErr())
 	select {
 	case <-gotSentinels:
-		logger.Printf("infraRun; got sentinels after command %q", c.Command())
+		logger.Printf(
+			"infraRun; got sentinels after command %q", abbrev(c.Command()))
 		return nil
 	case err := <-eInf.channels.Done:
 		logger.Printf("infraRun; channels.Done ended unexpectedly with err: %s", err.Error())
@@ -116,7 +116,7 @@ func (eInf *execInfra) infraRun(d time.Duration, c Commander) error {
 	case <-time.After(d):
 		logger.Printf("infraRun; no sentinels found after %s", d)
 		return fmt.Errorf(
-			"running %q, no sentinels found after %s", c.Command(), d)
+			"running %q, no sentinels found after %s", abbrev(c.Command()), d)
 	}
 }
 
