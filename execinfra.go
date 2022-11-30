@@ -229,10 +229,8 @@ func scanForSentinel(
 			logger.Printf("scan %s; happily closed", name)
 			return
 		}
-		logger.Printf(
-			"scan %s; at end of line found no sentinel value %q", name, senValue)
+		logger.Printf("scan %s; forwarding line (no sentinel %q)", name, senValue)
 		// Pass the data on.
-		logger.Printf("scan %s; forwarding line", name)
 		if _, err := parser.Write([]byte(line)); err != nil {
 			chErr <- fmt.Errorf(
 				"problem writing line %q to %s parser; %w", line, name, err)
