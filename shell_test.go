@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var commandStatus = newPrintingCommander("status")
+var commandStatus = NewLabellingCommander("status")
 
 func makeConchParams() Parameters {
 	return Parameters{

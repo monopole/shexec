@@ -1,8 +1,6 @@
 package shexec_test
 
 import (
-	"fmt"
-	"io"
 	"time"
 )
 
@@ -22,44 +20,4 @@ func assertNoErr(err error) {
 	if err != nil {
 		panic("example failure: unexpected err: " + err.Error())
 	}
-}
-
-// printingCommander just passes subprocess output from stdout and stderr
-// to the main process' stdout, adding a prefix to make a distinction.
-type printingCommander struct {
-	Cmd  string
-	wOut io.WriteCloser
-	wErr io.WriteCloser
-}
-
-func newPrintingCommander(c string) *printingCommander {
-	return &printingCommander{
-		Cmd:  c,
-		wOut: &simplePrinter{"out"},
-		wErr: &simplePrinter{"err"},
-	}
-}
-
-func (c *printingCommander) Command() string {
-	return c.Cmd
-}
-
-func (c *printingCommander) ParseOut() io.WriteCloser {
-	return c.wOut
-}
-
-func (c *printingCommander) ParseErr() io.WriteCloser {
-	return c.wErr
-}
-
-type simplePrinter struct {
-	prefix string
-}
-
-func (sp *simplePrinter) Write(data []byte) (int, error) {
-	return fmt.Printf("%s: %s\n", sp.prefix, string(data))
-}
-
-func (sp *simplePrinter) Close() error {
-	return nil
 }

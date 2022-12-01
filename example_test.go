@@ -22,12 +22,12 @@ func Example_binSh() {
 	})
 	assertNoErr(sh.Start(timeOutShort))
 	assertNoErr(sh.Run(timeOutShort,
-		newPrintingCommander(`
+		NewLabellingCommander(`
 echo alpha
 which cat
 `)))
 	assertNoErr(sh.Run(timeOutShort,
-		newPrintingCommander(`
+		NewLabellingCommander(`
 echo beta
 which find
 `,
@@ -74,7 +74,7 @@ func Example_basicRun() {
 		SentinelOut: sentinelVersion,
 	})
 	assertNoErr(sh.Start(timeOutShort))
-	assertNoErr(sh.Run(timeOutShort, newPrintingCommander("query limit 3")))
+	assertNoErr(sh.Run(timeOutShort, NewLabellingCommander("query limit 3")))
 	assertNoErr(sh.Stop(timeOutShort, ""))
 
 	// Output:
@@ -121,7 +121,7 @@ func Example_subprocessTakesTooLong() {
 	// Send in a sleep command that consumes twice the timeOut.
 	err := sh.Run(
 		timeOutShort,
-		newPrintingCommander("sleep "+(2*timeOutShort).String()))
+		NewLabellingCommander("sleep "+(2*timeOutShort).String()))
 	fmt.Println(err.Error())
 
 	// Output:
@@ -144,7 +144,7 @@ func Example_subprocessSurvivableError() {
 	})
 	assertNoErr(sh.Start(timeOutShort))
 
-	cmdr := newPrintingCommander("query limit 3")
+	cmdr := NewLabellingCommander("query limit 3")
 
 	// The following yields three lines.
 	assertNoErr(sh.Run(timeOutShort, cmdr))
@@ -158,11 +158,11 @@ func Example_subprocessSurvivableError() {
 	// middle relative to lines from stdOut,
 	// so this test must not be fragile to the order.
 	// This will yield three "good lines", and one error line.
-	cmdr.Cmd = "query limit 7"
+	cmdr.C = "query limit 7"
 	assertNoErr(sh.Run(timeOutShort, cmdr))
 
 	// Yields two lines.
-	cmdr.Cmd = "query limit 2"
+	cmdr.C = "query limit 2"
 	assertNoErr(sh.Run(timeOutShort, cmdr))
 
 	assertNoErr(sh.Stop(timeOutShort, ""))
@@ -199,7 +199,7 @@ func Example_subprocessNonSurvivableError() {
 	})
 	assertNoErr(sh.Start(timeOutShort))
 
-	cmdr := newPrintingCommander("query limit 3")
+	cmdr := NewLabellingCommander("query limit 3")
 
 	// The following yields three lines.
 	assertNoErr(sh.Run(timeOutShort, cmdr))
@@ -207,7 +207,7 @@ func Example_subprocessNonSurvivableError() {
 	// Query again, but ask for a row beyond the row that
 	// triggers a DB error.
 	// Since flag "exit-on-error" is enabled, this causes the CLI to die.
-	cmdr.Cmd = "query limit 5"
+	cmdr.C = "query limit 5"
 	err := sh.Run(timeOutShort, cmdr)
 	assertErr(err)
 	fmt.Println(err.Error())
@@ -218,7 +218,7 @@ func Example_subprocessNonSurvivableError() {
 
 	// Start it up again and issue a command to show that it works.
 	assertNoErr(sh.Start(timeOutShort))
-	cmdr.Cmd = "query limit 2"
+	cmdr.C = "query limit 2"
 	assertNoErr(sh.Run(timeOutShort, cmdr))
 	assertNoErr(sh.Stop(timeOutShort, ""))
 
