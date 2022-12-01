@@ -17,6 +17,8 @@ func NewShell(p Parameters) Shell {
 			if err := p.Validate(); err != nil {
 				return nil, err
 			}
+			verboseLoggingEnabled, channeler.VerboseLoggingEnabled =
+				p.EnableDetailedLogging, p.EnableDetailedLogging
 			return channeler.Start(&p.Params)
 		},
 		p.SentinelOut,
@@ -32,6 +34,8 @@ type channelsMakerF func() (*channeler.Channels, error)
 // the given channels-maker function and the two sentinels.
 // Allows testing with injected channels instead of a real shell subprocess.
 func NewShellRaw(f channelsMakerF, so Sentinel, se Sentinel) Shell {
+	// Uncomment when debugging.
+	// verboseLoggingEnabled, channeler.VerboseLoggingEnabled = true, true
 	return &execMutex{
 		state: &execStateOff{
 			infra: &execInfra{

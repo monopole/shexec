@@ -206,8 +206,8 @@ func TestShellRaw2(t *testing.T) {
 type sillyCommand struct{}
 
 func (x *sillyCommand) Command() string          { return rawCommand }
-func (x *sillyCommand) ParseOut() io.WriteCloser { return devNull }
-func (x *sillyCommand) ParseErr() io.WriteCloser { return devNull }
+func (x *sillyCommand) ParseOut() io.WriteCloser { return DevNull }
+func (x *sillyCommand) ParseErr() io.WriteCloser { return DevNull }
 
 func TestShellRaw3(t *testing.T) {
 	chStdIn, chDone, chStdOut, chStdErr, sh := rawSetUp()

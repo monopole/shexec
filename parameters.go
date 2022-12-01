@@ -26,6 +26,9 @@ type Parameters struct {
 	// course of running command N are swept up and accounted for before
 	// looking for errors from command N+1.
 	SentinelErr Sentinel
+
+	// EnableDetailedLogging does what it sounds like
+	EnableDetailedLogging bool
 }
 
 // Validate returns an error if there's a problem in the Parameters.

@@ -7,8 +7,8 @@ import (
 	"os"
 )
 
-// enableLogging can be set to true to see detailed logging.
-var enableLogging = false
+// verboseLoggingEnabled can be set to true to see detailed logging.
+var verboseLoggingEnabled = false
 
 func abbrev(x string) string {
 	if len(x) > channeler.AbbrevMaxLen {
@@ -17,20 +17,10 @@ func abbrev(x string) string {
 	return x
 }
 
-// VerboseLoggingEnable enables detailed logging.
-func VerboseLoggingEnable() {
-	enableLogging, channeler.VerboseLoggingEnabled = true, true
-}
-
-// VerboseLoggingDisable disables detailed logging.
-func VerboseLoggingDisable() {
-	enableLogging, channeler.VerboseLoggingEnabled = false, false
-}
-
 type logSink struct{}
 
 func (l logSink) Write(p []byte) (n int, err error) {
-	if enableLogging {
+	if verboseLoggingEnabled {
 		return fmt.Fprint(os.Stderr, string(p))
 	}
 	return 0, nil
