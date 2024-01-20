@@ -1,7 +1,6 @@
 package channeler
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -101,50 +100,30 @@ func (p *Params) setDefaults() {
 func (p *Params) validateWorkDir() (err error) {
 	p.WorkingDir, err = filepath.Abs(p.WorkingDir)
 	if err != nil {
-		return err
+		return paramErrCaused(err, "bad working dir path")
 	}
 	var info os.FileInfo
 	info, err = os.Stat(p.WorkingDir)
 	if err != nil {
-		return err
+		return paramErrCaused(err, "bad working dir stat")
 	}
 	if !info.IsDir() {
-		return fmt.Errorf("%q is not a directory that exists", p.WorkingDir)
+		return paramErr("%q is not a directory that exists", p.WorkingDir)
 	}
 	return nil
 }
 
 func (p *Params) validatePath() (err error) {
 	if p.Path == "" {
-		return fmt.Errorf("must specify Path to the executable to run")
+		return paramErr("must specify Path to the executable to run")
 	}
 	return errIfNoCommand(p.Path)
-}
-
-func (p *Params) olderValidate() error {
-	if !filepath.IsAbs(p.Path) {
-		p.Path = filepath.Join(p.WorkingDir, p.Path)
-	}
-	var err error
-	p.Path, err = filepath.Abs(p.Path)
-	if err != nil {
-		return err
-	}
-	var info os.FileInfo
-	info, err = os.Stat(p.Path)
-	if err != nil {
-		return err
-	}
-	if info.IsDir() {
-		return fmt.Errorf("%q is a directory, not an executable file", p.Path)
-	}
-	return nil
 }
 
 func errIfNoCommand(name string) error {
 	cmd := exec.Command("/bin/sh", "-c", "command -v "+name)
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("path %q not available; %w", name, err)
+		return paramErrCaused(err, "path %q not available", name)
 	}
 	return nil
 }

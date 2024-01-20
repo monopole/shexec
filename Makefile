@@ -15,11 +15,11 @@ report: $(GOBIN)/goreportcard-cli
 
 .PHONY: lint
 lint: $(GOBIN)/golangci-lint fix-imports
-	$(GOBIN)/golangci-lint run ./...
+	$(GOBIN)/golangci-lint run --config build/golangci.yaml ./...
 
 .PHONY: fix-imports
 fix-imports: $(GOBIN)/goimports
-	./hack/fix_imports.sh
+	./build/fix_imports.sh
 
 $(GOBIN)/goreportcard-cli: $(GOBIN)/misspell
 	( \
@@ -33,18 +33,19 @@ $(GOBIN)/goreportcard-cli: $(GOBIN)/misspell
 	)
 
 $(GOBIN)/goimports:
-	./hack/go_tool_install.sh goimports
+	./build/go_tool_install.sh goimports
 
 $(GOBIN)/golangci-lint:
-	./hack/go_tool_install.sh golangci-lint
+	./build/go_tool_install.sh golangci-lint
 
 $(GOBIN)/misspell:
-	./hack/go_tool_install.sh misspell
+	go get github.com/client9/misspell/cmd/misspell
+	./build/go_tool_install.sh misspell
 
 .PHONY: conch
 conch: $(GOBIN)/conch
 $(GOBIN)/conch:
-	./hack/go_tool_install.sh conch
+	./build/go_tool_install.sh conch
 
 .PHONY: clean
 clean:

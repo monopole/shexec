@@ -1,21 +1,16 @@
 run:
-  skip-dirs:
-    - cmd/ebom/internal/test
-    - cmd/ebom/hack
   skip-files: []
   tests: false
   modules-download-mode: readonly
 
 linters:
   enable:
-    - gocognit
-    # new ones
     - asasalint
     - asciicheck
     - bidichk
     - bodyclose
     - contextcheck
-    - cyclop
+    # - cyclop  # use gocognit instead
     - decorder
     # - depguard
     - dogsled
@@ -35,9 +30,10 @@ linters:
     # - gci
     - gochecknoglobals
     - gochecknoinits
+    - gocognit # use cognitive instead of the useless cyclomatic in cyclop and gocyclo
     # - goconst
     - gocritic
-    - gocyclo
+    # - gocyclo # Use gocognit instead.
     - godot
     # - godox
     - goerr113
@@ -63,10 +59,10 @@ linters:
     - nestif
     - nilerr
     # - nilnil
-    - nlreturn
+    # - nlreturn mindlessly adding a blank line before every return is asinine
     - noctx
     # - nolintlint
-    - nonamedreturns
+    # - nonamedreturns wrecks a language feature, and the argument for it is poor
     - nosprintfhostport
     # - paralleltest
     # - prealloc
@@ -90,13 +86,8 @@ linters:
     # - wastedassign # -- https://github.com/golangci/golangci-lint/issues/2649
     - whitespace
     - wrapcheck
-    - wsl
+    # - wsl is one guy's silly opinion on whitespace (see https://github.com/bombsimon/wsl)
 linters-settings:
-  wsl:
-    # allows:
-    #   var a string
-    #   var b int
-    allow-cuddle-declarations: true
   gosec:
     excludes:
       - G204 # Subprocess launched with a potential tainted input or cmd arguments (MQL)

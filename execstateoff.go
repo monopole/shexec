@@ -1,7 +1,6 @@
 package shexec
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -19,10 +18,10 @@ func (exOff *execStateOff) subStart(d time.Duration) (execState, error) {
 
 func (exOff *execStateOff) subRun(_ time.Duration, _ Commander) (
 	execState, error) {
-	return exOff, fmt.Errorf("run called, but shell not started yet")
+	return exOff, shErr("run called, but shell not started yet")
 }
 
 func (exOff *execStateOff) subStop(
 	_ time.Duration, _ bareCommand) (execState, error) {
-	return exOff, fmt.Errorf("stop called, but shell not started yet")
+	return exOff, shErr("stop called, but shell not started yet")
 }

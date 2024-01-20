@@ -2,6 +2,7 @@ package shexec
 
 import (
 	"fmt"
+
 	"github.com/monopole/shexec/channeler"
 )
 
@@ -34,6 +35,7 @@ type Parameters struct {
 // Validate returns an error if there's a problem in the Parameters.
 func (p *Parameters) Validate() error {
 	if err := p.Params.Validate(); err != nil {
+		//nolint:wrapcheck
 		return err
 	}
 	if err := p.SentinelOut.Validate(); err != nil {

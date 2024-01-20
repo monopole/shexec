@@ -3,6 +3,8 @@ package shexec
 import "io"
 
 // DevNull is an io.WriteCloser that does nothing.
+//
+//nolint:gochecknoglobals
 var DevNull io.WriteCloser = &discard{}
 
 // discard is an io.WriteCloser that does nothing.
