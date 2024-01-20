@@ -20,7 +20,8 @@ func Example_binSh() {
 			V: unlikelyWord,
 		},
 	})
-	assertNoErr(sh.Start(timeOutShort))
+	err := sh.Start(timeOutShort)
+	assertNoErr(err)
 	assertNoErr(sh.Run(timeOutShort,
 		NewLabellingCommander(`
 echo alpha

@@ -8,7 +8,7 @@ import (
 )
 
 // verboseLoggingEnabled can be set to true to see detailed logging.
-var verboseLoggingEnabled = false
+var verboseLoggingEnabled = true
 
 func abbrev(x string) string {
 	if len(x) > channeler.AbbrevMaxLen {
