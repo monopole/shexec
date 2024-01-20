@@ -45,7 +45,7 @@ func TestShellNoSentinelOut(t *testing.T) {
 		}})
 	err := sh.Start(timeOutShort)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), `problem in SentinelOut; must specify Sentinel command`)
+	assert.Contains(t, err.Error(), `must specify Sentinel command`)
 }
 
 func TestShellNoSentinelOutValue(t *testing.T) {
@@ -55,7 +55,7 @@ func TestShellNoSentinelOutValue(t *testing.T) {
 	})
 	if err := sh.Start(timeOutShort); assert.Error(t, err) {
 		assert.Contains(t, err.Error(),
-			`problem in SentinelOut; sentinel value "" too short at len=0;`)
+			`sentinel value "" too short at len=0;`)
 	}
 }
 

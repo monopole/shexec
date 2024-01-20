@@ -62,9 +62,10 @@ type labellingPrinter struct{ prefix string }
 func (sp *labellingPrinter) Close() error { return nil }
 func (sp *labellingPrinter) Write(data []byte) (int, error) {
 	if sp.prefix == "" {
-		return fmt.Println(string(data))
+		//nolint:wrapcheck
+		return fmt.Fprintln(os.Stdout, string(data))
 	}
-	_, err := fmt.Printf("%s: %s\n", sp.prefix, string(data))
+	_, err := fmt.Fprintf(os.Stdout, "%s: %s\n", sp.prefix, string(data))
 	return len(data), err
 }
 
@@ -83,9 +84,12 @@ func NewRecallCommander(c string) *RecallCommander {
 func (c *RecallCommander) Command() string          { return c.C }
 func (c *RecallCommander) ParseOut() io.WriteCloser { return &c.wOut }
 func (c *RecallCommander) ParseErr() io.WriteCloser { return &c.wErr }
-func (c *RecallCommander) Reset()                   { c.wErr.Reset(); c.wOut.Reset() }
-func (c *RecallCommander) DataOut() []string        { return c.wOut.data }
-func (c *RecallCommander) DataErr() []string        { return c.wErr.data }
+func (c *RecallCommander) Reset() {
+	c.wErr.Reset()
+	c.wOut.Reset()
+}
+func (c *RecallCommander) DataOut() []string { return c.wOut.data }
+func (c *RecallCommander) DataErr() []string { return c.wErr.data }
 
 // LineAbsorber remembers all the non-empty lines it sees.
 type LineAbsorber struct{ data []string }

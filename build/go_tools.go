@@ -1,7 +1,7 @@
 //go:build tools
-// +build tools
 
-// This file exists only to declare dependencies on Go-based executables.
+// This file exists only to declare dependencies on Go-based executables
+// used in linting, generating code, etc.
 // The versions are declared in the nearby go.mod file.
 
 package hack
