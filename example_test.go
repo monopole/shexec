@@ -101,7 +101,7 @@ func Example_subprocessFailOnStartup() {
 	fmt.Println(err.Error())
 
 	// Output:
-	// stdOut closed before sentinel "v1.2.3" found
+	// shexec infra; stdOut closed before sentinel "v1.2.3" found
 }
 
 // A command takes too long and fails as a result.
@@ -126,7 +126,7 @@ func Example_subprocessTakesTooLong() {
 	fmt.Println(err.Error())
 
 	// Output:
-	// running "sleep 1.6s", no sentinels found after 800ms
+	// shexec infra; running "sleep 1.6s", no sentinels found after 800ms
 }
 
 // A shell spits output to stderr.
@@ -230,8 +230,8 @@ func Example_subprocessNonSurvivableError() {
 	// out: Currant_|_Alauda_|_5_|_00000000000000000000000000000001
 	// out: Banana_|_Egeria_|_5_|_00000000000000000000000000000002
 	// out: Bilberry_|_Interamnia_|_2_|_00000000000000000000000000000003
-	// stdOut closed before sentinel "v1.2.3" found
-	// stop called, but shell not started yet
+	// shexec infra; stdOut closed before sentinel "v1.2.3" found
+	// shexec infra; stop called, but shell not started yet
 	// out: Cempedak_|_Bamberga_|_4_|_00000000000000000000000000000001
 	// out: Buddha's hand_|_Hermione_|_6_|_00000000000000000000000000000002
 }

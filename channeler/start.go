@@ -56,9 +56,11 @@ func Start(p *Params) (*Channels, error) {
 	// Start the output scanners.
 	// They will close their output channels when the process exits.
 	scanWg.Add(1)
-	go handleOutput(&scanWg, chDone, p.ChTimeoutOut, chStdOut, "stdOut", scanOut)
+	go handleOutput(
+		&scanWg, chDone, p.ChTimeoutOut, chStdOut, "stdOut", scanOut)
 	scanWg.Add(1)
-	go handleOutput(&scanWg, chDone, p.ChTimeoutOut, chStdErr, "stdErr", scanErr)
+	go handleOutput(
+		&scanWg, chDone, p.ChTimeoutOut, chStdErr, "stdErr", scanErr)
 
 	// Start the input thread.  It runs until chStdIn is closed.
 	go handleInput(
@@ -73,6 +75,10 @@ func Start(p *Params) (*Channels, error) {
 	}, nil
 }
 
+// handleInput monitors, drains and closes all inputs.
+// Regrettably it has a high cognitive complexity score.
+//
+//nolint:gocognit
 func handleInput(
 	scanWg *sync.WaitGroup,
 	chDone chan<- error,
@@ -111,25 +117,28 @@ func handleInput(
 				bytes := assureTermination(line, terminator)
 				logger.Printf("%s; issuing: %q", name, string(bytes))
 				if _, err := stdIn.Write(bytes); err != nil {
-					logger.Printf("%s; unable to write stdIn; %s", name, err.Error())
+					logger.Printf(
+						"%s; unable to write stdIn; %s", name, err.Error())
 					chDone <- fmt.Errorf("unable to write to stdIn; %w", err)
 					return
 				}
 			} else {
-				logger.Printf("%s; detected external closure, shutting down!", name)
+				logger.Printf(
+					"%s; detected external closure, shutting down!", name)
 				chStdIn = nil
 			}
 		case <-timer.C:
 			logger.Printf("%s; sleepy timeout of %s elapsed", name, timeout)
-			logger.Printf("%s; why is client taking so long to issue another command?", name)
+			logger.Printf("%s; taking too long to issue another command", name)
 			logger.Printf("%s; sending error, abandoning process.", name)
-			chDone <- fmt.Errorf(
+			chDone <- paramErr(
 				"timeout of %s elapsed awaiting for input or close on stdin",
 				timeout)
 			return
 		}
 	}
-	logger.Printf("%s; channel closed from the outside (presumably on purpose)", name)
+	logger.Printf(
+		"%s; channel closed from the outside (presumably on purpose)", name)
 	if err := stdIn.Close(); err != nil {
 		logger.Printf("%s; unable to close true stdIn", name)
 		chDone <- fmt.Errorf("unable to close stdIn; %w", err)
@@ -188,8 +197,8 @@ func handleOutput(
 			// over Scan() won't finish, which means a call to
 			// cmd.Wait() will block.  Adding a timeout here to help
 			// diagnose that particular situation.
-			logger.Printf("%s; backpressure timeout of %s elapsed", name, timeout)
-			chDone <- fmt.Errorf(
+			logger.Printf("%s; backpressure timeout %s elapsed", name, timeout)
+			chDone <- paramErr(
 				"timeout of %s elapsed awaiting write to %s",
 				timeout, name)
 			close(chStream)

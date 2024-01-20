@@ -1,7 +1,6 @@
 package shexec
 
 import (
-	"fmt"
 	"log"
 )
 
@@ -39,7 +38,7 @@ const (
 	// the less the chance of confusing it with valid output.
 	sentinelValueLenMin = 6
 	// sentinelValueLenRecommendedMin triggers a nagging message.
-	// TODO: find better way to detect a bad sentinel value
+	// TODO: find better way to detect a bad sentinel value.
 	sentinelValueLenRecommendedMin = 12
 	// enableSentinelNagging turns on sentinel nagging.
 	enableSentinelNagging = false
@@ -50,10 +49,10 @@ const (
 // the infrastructure will hang.
 func (s *Sentinel) Validate() error {
 	if s.C == "" {
-		return fmt.Errorf("must specify Sentinel command")
+		return shErr("must specify Sentinel command")
 	}
 	if len(s.V) < sentinelValueLenMin {
-		return fmt.Errorf(
+		return shErr(
 			"sentinel value %q too short at len=%d; must be >= %d chars long",
 			s.V, len(s.V), sentinelValueLenMin)
 	}

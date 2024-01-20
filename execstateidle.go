@@ -1,7 +1,6 @@
 package shexec
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -11,7 +10,7 @@ type execStateIdle struct {
 }
 
 func (exIdle *execStateIdle) subStart(_ time.Duration) (execState, error) {
-	return exIdle, fmt.Errorf("start called, but shell is already started")
+	return exIdle, shErr("start called, but shell is already started")
 }
 
 func (exIdle *execStateIdle) subRun(

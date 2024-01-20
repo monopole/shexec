@@ -24,7 +24,7 @@ func TestParameters_Validate(t *testing.T) {
 	err = p.Validate()
 	assert.Error(t, err)
 	assert.Contains(
-		t, err.Error(), "problem in SentinelOut; must specify Sentinel command")
+		t, err.Error(), "must specify Sentinel command")
 
 	p.SentinelOut = Sentinel{
 		C: "echo " + unlikelyWord,
