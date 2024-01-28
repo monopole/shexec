@@ -1,0 +1,124 @@
+run:
+  skip-dirs:
+    - cmd/ebom/internal/test
+    - cmd/ebom/hack
+  skip-files: []
+  tests: false
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    - gocognit
+    # new ones
+    - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - contextcheck
+    - cyclop
+    - decorder
+    # - depguard
+    - dogsled
+    # - dupl
+    - dupword
+    - durationcheck
+    - errchkjson
+    - errname
+    - errorlint
+    - execinquery
+    - exhaustive
+    # - exhaustruct
+    - exportloopref
+    - forbidigo
+    - forcetypeassert
+    # - funlen
+    # - gci
+    - gochecknoglobals
+    - gochecknoinits
+    # - goconst
+    - gocritic
+    - gocyclo
+    - godot
+    # - godox
+    - goerr113
+    # - gofmt
+    # - gofumpt
+    - goheader
+    # - goimports
+    - gomnd
+    - gomoddirectives
+    - gomodguard
+    - goprintffuncname
+    - gosec
+    - grouper
+    - importas
+    - interfacebloat
+    # - ireturn
+    - lll
+    - loggercheck
+    - maintidx
+    - makezero
+    - misspell
+    - nakedret
+    - nestif
+    - nilerr
+    # - nilnil
+    - nlreturn
+    - noctx
+    # - nolintlint
+    - nonamedreturns
+    - nosprintfhostport
+    # - paralleltest
+    # - prealloc
+    - predeclared
+    - promlinter
+    - reassign
+    - revive
+    # - rowserrcheck # -- https://github.com/golangci/golangci-lint/issues/2649
+    # - sqlclosecheck # -- https://github.com/golangci/golangci-lint/issues/2649
+    - stylecheck
+    - tagliatelle
+    - tenv
+    # - testableexamples
+    - testpackage
+    - thelper
+    - tparallel
+    - unconvert
+    - unparam
+    - usestdlibvars
+    # - varnamelen
+    # - wastedassign # -- https://github.com/golangci/golangci-lint/issues/2649
+    - whitespace
+    - wrapcheck
+    - wsl
+linters-settings:
+  wsl:
+    # allows:
+    #   var a string
+    #   var b int
+    allow-cuddle-declarations: true
+  gosec:
+    excludes:
+      - G204 # Subprocess launched with a potential tainted input or cmd arguments (MQL)
+  lll:
+      line-length: 80
+      tab-width: 4
+  gocognit:
+    # Complexity rating > this value will error
+    min-complexity: 12
+  errcheck:
+    # Report about not checking of errors in type assertions: `a := b.(MyStruct)`.
+    check-type-assertions: true
+    exclude-functions:
+      - (*github.tesla.com/design-technology/parallax-utils/pkg/flags.FlagManager).AddToCommandSet
+      - (*google.golang.org/grpc.Server).Serve
+      - net/http.ListenAndServe
+      - (*net/http.Server).ListenAndServe
+  staticcheck:
+    checks:
+      - ALL
+      - -SA1029 # Inappropriate key in call to context.WithValue (using string for key)
+  revive:
+    rules:
+      - name: context-keys-type
+        disabled: true
