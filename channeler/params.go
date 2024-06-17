@@ -50,22 +50,27 @@ type Params struct {
 	// BuffSizeErr is like BuffSizeOut, except for stderr.
 	BuffSizeErr int
 
-	// ChTimeout is how long back pressure from stdOut and stdErr
-	// consumption is allowed to stall things before we fail,
-	// suspecting a deadlock in consumer code.
-	// An expired timeout results in an error on the Done channel.
-	// To avoid timeouts, increase buffer BuffSizeOut and/or BuffSizeErr
-	// and/or consume output faster.
-	ChTimeoutOut time.Duration
+	// InfraConsumerTimeout is how long to wait for data from stdOut
+	// or stdErr to be consumed by the infrastructure (the parser).
+	// This is effectively an exit hatch if the parser or
+	// some other aspect of the infrastructure (not the subprocess)
+	// is taking too long.
+	// To avoid timeouts, increase buffer BuffSizeOut and/or
+	// BuffSizeErr and/or consume output faster.
+	// This is an infrastructure parameter, not really meant
+	// for use by a client.
+	InfraConsumerTimeout time.Duration
 }
 
 const (
 	defaultBuffSizeIn  = 100
 	defaultBuffSizeOut = 10000
 	defaultBuffSizeErr = 100
+
 	// make this value interesting so that it's easy to spot.
 	// It's not clear that there's any reason for this to be long.
-	defaultChTimeoutOut = 7777 * time.Millisecond
+	defaultInfraConsumerTimeout = 7777 * time.Millisecond
+
 	// This, however, can be long, and maybe it should be removed completely
 	// effectively treated as infinite.
 	defaultChTimeoutIn = 12 * time.Hour
@@ -89,8 +94,8 @@ func (p *Params) setDefaults() {
 	if p.BuffSizeErr < 1 {
 		p.BuffSizeErr = defaultBuffSizeErr
 	}
-	if p.ChTimeoutOut == 0 {
-		p.ChTimeoutOut = defaultChTimeoutOut
+	if p.InfraConsumerTimeout == 0 {
+		p.InfraConsumerTimeout = defaultInfraConsumerTimeout
 	}
 	if p.ChTimeoutIn == 0 {
 		p.ChTimeoutIn = defaultChTimeoutIn

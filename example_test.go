@@ -10,10 +10,11 @@ import (
 const unlikelyWord = "supercalifragilisticexpialidocious"
 
 // An example using /bin/sh, a shell that's available on most platforms.
-func Example_binSh() {
+func Example_binShHappy() {
 	sh := NewShell(Parameters{
 		Params: channeler.Params{
 			Path: "/bin/sh",
+			Args: []string{"-e"},
 		},
 		SentinelOut: Sentinel{
 			C: "echo " + unlikelyWord,
@@ -40,6 +41,108 @@ which find
 	// out: /usr/bin/cat
 	// out: beta
 	// out: /usr/bin/find
+}
+
+func Example_binShAllowError() {
+	sh := NewShell(Parameters{
+		Params: channeler.Params{
+			Path: "/bin/sh",
+			// No "-e"; keep going on error.
+		},
+		SentinelOut: Sentinel{
+			C: "echo " + unlikelyWord,
+			V: unlikelyWord,
+		},
+	})
+	err := sh.Start(timeOutShort)
+	assertNoErr(err)
+	assertNoErr(sh.Run(timeOutShort,
+		NewLabellingCommander(`
+echo alpha
+which cat
+`)))
+	assertNoErr(sh.Run(timeOutShort,
+		NewLabellingCommander(`
+thisCommandDoesNotExist
+`,
+		)))
+	assertNoErr(sh.Run(timeOutShort,
+		NewLabellingCommander(`
+echo beta
+which ls
+`)))
+	assertNoErr(sh.Stop(timeOutShort, ""))
+
+	// Output:
+	// out: alpha
+	// out: /usr/bin/cat
+	// out: beta
+	// out: /usr/bin/ls
+}
+
+// An example using /bin/sh, a shell that's available on most platforms.
+func Example_binShDieOnError() {
+	sh := NewShell(Parameters{
+		Params: channeler.Params{
+			Path: "/bin/sh",
+			Args: []string{"-e"},
+		},
+		SentinelOut: Sentinel{
+			C: "echo " + unlikelyWord,
+			V: unlikelyWord,
+		},
+	})
+	err := sh.Start(timeOutShort)
+	assertNoErr(err)
+	assertNoErr(sh.Run(timeOutShort,
+		NewLabellingCommander(`
+echo alpha
+which cat
+`)))
+	assertNoErr(sh.Run(timeOutLong,
+		NewLabellingCommander(`
+sleep 1
+which ls
+`)))
+	assertErr(sh.Run(timeOutShort,
+		NewLabellingCommander(`
+which thisCommandDoesNotExist
+`,
+		)))
+
+	// Output:
+	// out: alpha
+	// out: /usr/bin/cat
+	// out: /usr/bin/ls
+}
+
+func Example_binShTimeout() {
+	sh := NewShell(Parameters{
+		Params: channeler.Params{
+			Path: "/bin/sh",
+			Args: []string{"-e"},
+		},
+		SentinelOut: Sentinel{
+			C: "echo " + unlikelyWord,
+			V: unlikelyWord,
+		},
+	})
+	err := sh.Start(timeOutShort)
+	assertNoErr(err)
+	assertNoErr(sh.Run(timeOutShort,
+		NewLabellingCommander(`
+echo alpha
+which cat
+`)))
+	// Sleep past the timeout and hit an error.
+	assertErr(sh.Run(timeOutShort,
+		NewLabellingCommander(`
+sleep 2
+`)))
+
+	// Output:
+	// out: alpha
+	// out: /usr/bin/cat
 }
 
 // The tests below require the "conch" shell.

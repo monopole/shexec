@@ -5,6 +5,7 @@ import (
 )
 
 const (
+	timeOutLong = 2 * time.Second
 	// timeOutShort is a "short" timeout, for happy cases.
 	timeOutShort = 800 * time.Millisecond
 	timeOutTiny  = 30 * time.Millisecond

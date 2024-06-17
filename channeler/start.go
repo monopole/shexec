@@ -53,14 +53,23 @@ func Start(p *Params) (*Channels, error) {
 	// (either success or fail).
 	var scanWg sync.WaitGroup
 
-	// Start the output scanners.
-	// They will close their output channels when the process exits.
+	// Start the output scanners. When the sub-process exits,
+	// these Go routines will close the respective channels
+	// chStdOut and cnStdErr, and call scanWg.Done.
+	// These scanners will live as long as there is output
+	// coming from the subprocess. If output is coming in,
+	// but the infrastructure isn't consuming it for some reason,
+	// then this routine will send an error into
+	// chDone.  The timeout countdown is reset whenever output
+	// from the given pipe is consumed by the given channel.
 	scanWg.Add(1)
 	go handleOutput(
-		&scanWg, chDone, p.ChTimeoutOut, chStdOut, "stdOut", scanOut)
+		&scanWg, chDone, p.InfraConsumerTimeout,
+		chStdOut, "stdOut", scanOut)
 	scanWg.Add(1)
 	go handleOutput(
-		&scanWg, chDone, p.ChTimeoutOut, chStdErr, "stdErr", scanErr)
+		&scanWg, chDone, p.InfraConsumerTimeout,
+		chStdErr, "stdErr", scanErr)
 
 	// Start the input thread.  It runs until chStdIn is closed.
 	go handleInput(
@@ -167,45 +176,49 @@ func handleInput(
 func handleOutput(
 	wg *sync.WaitGroup,
 	chDone chan<- error,
-	timeout time.Duration,
+	consumerTimeout time.Duration,
 	chStream chan<- string,
 	name string,
 	scanner *bufio.Scanner,
 ) {
-	logger.Printf("%s; awaiting data...", name)
+	logger.Printf("%s; awaiting data from subprocess...", name)
 	count := 0
-	timer := time.NewTimer(timeout)
+	timer := time.NewTimer(consumerTimeout)
 	for scanner.Scan() {
 		line := scanner.Text()
 		count++
-		logger.Printf("%s; read line #%d: %q", name, count, abbrev(line))
+		logger.Printf("%s; have read line #%d: %q", name, count, abbrev(line))
 		if !timer.Stop() {
 			logger.Printf("%s; backpressure timer draining", name)
 			<-timer.C
 			logger.Printf("%s; backpressure timer drained", name)
 		}
-		timer.Reset(timeout)
+		timer.Reset(consumerTimeout)
 		logger.Printf("%s; backpressure timer reset", name)
 		select {
 		case chStream <- line:
 			logger.Printf("%s; forwarded line", name)
-			// Yay, whatever is reading this accepted the output.
+			// Yay, the infrastructure processing the subprocess' output
+			// is alive and reading this channel.
 		case <-timer.C:
+			// Subprocess output isn't being consumed fast enough.
 			// Something should drain chStream, even if only to discard
 			// the strings to /dev/null.
 			// If the stream channel's buffer fills up, this loop
 			// over Scan() won't finish, which means a call to
-			// cmd.Wait() will block.  Adding a timeout here to help
-			// diagnose that particular situation.
-			logger.Printf("%s; backpressure timeout %s elapsed", name, timeout)
+			// cmd.Wait() will block. This is the exit hatch to
+			// that particular deadlock.
+			logger.Printf(
+				"%s; backpressure consumerTimeout=%s elapsed",
+				name, consumerTimeout)
 			chDone <- paramErr(
-				"timeout of %s elapsed awaiting write to %s",
-				timeout, name)
+				"consumerTimeout=%s elapsed awaiting consumer on chan %s",
+				consumerTimeout, name)
 			close(chStream)
 			wg.Done()
 			return
 		}
-		logger.Printf("%s; awaiting data...", name)
+		logger.Printf("%s; awaiting data from subprocess...", name)
 	}
 	logger.Printf("%s; scan done; closing forwarding channel", name)
 	close(chStream)

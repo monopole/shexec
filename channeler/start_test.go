@@ -84,8 +84,8 @@ func TestStartWithBackPressure(t *testing.T) {
 	p := &Params{
 		Path: theShell,
 		// Use small buffer to create backpressure.
-		BuffSizeOut:  1,
-		ChTimeoutOut: 50 * time.Millisecond,
+		BuffSizeOut:          1,
+		InfraConsumerTimeout: 50 * time.Millisecond,
 	}
 	chs, err := Start(p)
 	assert.NoError(t, err)
@@ -96,15 +96,15 @@ func TestStartWithBackPressure(t *testing.T) {
 	go consumeChannel("err", chs.StdErr)
 	// Use a slow consumer to create backpressure.
 	go func() {
-		time.Sleep(2 * p.ChTimeoutOut)
+		time.Sleep(2 * p.InfraConsumerTimeout)
 		for line := range chs.StdOut {
-			time.Sleep(2 * p.ChTimeoutOut)
+			time.Sleep(2 * p.InfraConsumerTimeout)
 			fmt.Printf("%s: %q\n", "out", line)
 		}
 	}()
 	if err = <-chs.Done; assert.Error(t, err) {
 		assert.Contains(
 			t, err.Error(),
-			"timeout of 50ms elapsed awaiting write to stdOut")
+			"consumerTimeout=50ms elapsed awaiting consumer on chan stdOut")
 	}
 }
