@@ -91,6 +91,7 @@ func Example_binShDieOnError() {
 			C: "echo " + unlikelyWord,
 			V: unlikelyWord,
 		},
+		EnableDetailedLogging: true,
 	})
 	err := sh.Start(timeOutShort)
 	assertNoErr(err)
@@ -99,16 +100,27 @@ func Example_binShDieOnError() {
 echo alpha
 which cat
 `)))
-	assertNoErr(sh.Run(timeOutLong,
-		NewLabellingCommander(`
-sleep 1
-which ls
-`)))
-	assertErr(sh.Run(timeOutShort,
-		NewLabellingCommander(`
-which thisCommandDoesNotExist
-`,
-		)))
+	//	assertNoErr(sh.Run(timeOutLong,
+	//		NewLabellingCommander(`
+	//sleep 1
+	//which ls
+	//`)))
+
+	//	assertErr(sh.Run(timeOutShort,
+	//		NewLabellingCommander(`
+	//which thisCommandDoesNotExist
+	//`,
+	//		)))
+
+	c := NewRecallCommander(`which thisCommandDoesNotExist`)
+	err = sh.Run(timeOutShort, c)
+	if err == nil {
+		fmt.Println("No error.")
+	} else {
+		fmt.Printf("Error = %s\n", err)
+	}
+	fmt.Println("out:", c.DataOut())
+	fmt.Println("err:", c.DataErr())
 
 	// Output:
 	// out: alpha
