@@ -9,37 +9,48 @@ import (
 	"time"
 )
 
-// Start starts a shell subprocess, and returns all the channels needed
-// to interact with and control it.
-// To stop the shell, close it's input channel.
+// Start starts a shell subprocess, and returns an instance of Channels.
+// The holder of this instance can send input on the StdIn channel, process
+// output from StdOut and StdErr channels, and look for an error on the
+// Done channel. To stop the subprocess gracefully, close the StdIn channel.
+// The point of this infrastructure is to set up timeouts to assure
+// that things terminate and that channels close, freeing the client to just
+// focus on these four channels.
 func Start(p *Params) (*Channels, error) {
-	if err := p.Validate(); err != nil {
+	var (
+		err              error
+		stdIn            io.WriteCloser
+		scanOut, scanErr *bufio.Scanner
+	)
+	if err = p.Validate(); err != nil {
 		return nil, err
 	}
 	cmd := exec.Command(p.Path, p.Args...)
 	cmd.Dir = p.WorkingDir
 
-	stdIn, err := cmd.StdinPipe()
+	stdIn, err = cmd.StdinPipe()
 	if err != nil {
 		return nil, fmt.Errorf("getting stdIn for %q; %w", p.Path, err)
 	}
 
-	var pipe io.ReadCloser
+	{
+		var pipe io.ReadCloser
 
-	pipe, err = cmd.StdoutPipe()
-	if err != nil {
-		return nil, fmt.Errorf("getting stdOut for %q; %w", p.Path, err)
-	}
-	scanOut := bufio.NewScanner(pipe)
+		pipe, err = cmd.StdoutPipe()
+		if err != nil {
+			return nil, fmt.Errorf("getting stdOut for %q; %w", p.Path, err)
+		}
+		scanOut = bufio.NewScanner(pipe)
 
-	pipe, err = cmd.StderrPipe()
-	if err != nil {
-		return nil, fmt.Errorf("getting stdErr for %q; %w", p.Path, err)
-	}
-	scanErr := bufio.NewScanner(pipe)
+		pipe, err = cmd.StderrPipe()
+		if err != nil {
+			return nil, fmt.Errorf("getting stdErr for %q; %w", p.Path, err)
+		}
+		scanErr = bufio.NewScanner(pipe)
 
-	if err = cmd.Start(); err != nil {
-		return nil, fmt.Errorf("trying to start %s - %w", p.Path, err)
+		if err = cmd.Start(); err != nil {
+			return nil, fmt.Errorf("trying to start %s - %w", p.Path, err)
+		}
 	}
 
 	// Make all the communication channels.
@@ -60,21 +71,23 @@ func Start(p *Params) (*Channels, error) {
 	// coming from the subprocess. If output is coming in,
 	// but the infrastructure isn't consuming it for some reason,
 	// then this routine will send an error into
-	// chDone.  The timeout countdown is reset whenever output
+	// chDone. The timeout countdown is reset whenever output
 	// from the given pipe is consumed by the given channel.
 	scanWg.Add(1)
-	go handleOutput(
-		&scanWg, chDone, p.InfraConsumerTimeout,
-		chStdOut, "stdOut", scanOut)
+	go scanStreamIntoChannel(
+		"stdOut", chStdOut, scanOut,
+		&scanWg, chDone, p.InfraConsumerTimeout)
 	scanWg.Add(1)
-	go handleOutput(
-		&scanWg, chDone, p.InfraConsumerTimeout,
-		chStdErr, "stdErr", scanErr)
+	go scanStreamIntoChannel(
+		"stdErr", chStdErr, scanErr,
+		&scanWg, chDone, p.InfraConsumerTimeout)
 
 	// Start the input thread.  It runs until chStdIn is closed.
 	go handleInput(
-		&scanWg, chDone, p.ChTimeoutIn, chStdIn,
-		stdIn, cmd.Wait, scanOut, scanErr, p.CommandTerminator)
+		chStdIn, stdIn, scanOut, scanErr, p.CommandTerminator,
+		&scanWg, chDone, p.ChTimeoutIn, cmd.Wait)
+	//&scanWg, chDone, p.ChTimeoutIn, chStdIn,
+	//	stdIn, cmd.Wait, scanOut, scanErr, p.CommandTerminator)
 
 	return &Channels{
 		StdIn:  chStdIn,
@@ -89,15 +102,15 @@ func Start(p *Params) (*Channels, error) {
 //
 //nolint:gocognit
 func handleInput(
-	scanWg *sync.WaitGroup,
-	chDone chan<- error,
-	timeout time.Duration,
 	chStdIn <-chan string,
 	stdIn io.WriteCloser,
-	cmdWait func() error,
 	scanOut *bufio.Scanner,
 	scanErr *bufio.Scanner,
 	terminator byte,
+	scanWg *sync.WaitGroup,
+	chDone chan<- error,
+	timeout time.Duration,
+	cmdWait func() error,
 ) {
 	const name = " stdIn"
 	defer close(chDone)
@@ -109,20 +122,17 @@ func handleInput(
 	}
 	var line string
 	timer := time.NewTimer(timeout)
-	stillOpen := true
-	for stillOpen {
+	moreInputComing := true
+	for moreInputComing {
 		if !timer.Stop() {
-			logger.Printf("%s; sleepy timer draining", name)
 			<-timer.C
-			logger.Printf("%s; sleepy timer drained", name)
 		}
 		timer.Reset(timeout)
-		logger.Printf("%s; sleepy timer reset", name)
 		logger.Printf("%s; awaiting command", name)
 
 		select {
-		case line, stillOpen = <-chStdIn:
-			if stillOpen {
+		case line, moreInputComing = <-chStdIn:
+			if moreInputComing {
 				bytes := assureTermination(line, terminator)
 				logger.Printf("%s; issuing: %q", name, string(bytes))
 				if _, err := stdIn.Write(bytes); err != nil {
@@ -133,7 +143,7 @@ func handleInput(
 				}
 			} else {
 				logger.Printf(
-					"%s; detected external closure, shutting down!", name)
+					"%s; someone closed stdIn, shutting down.", name)
 				chStdIn = nil
 			}
 		case <-timer.C:
@@ -173,21 +183,30 @@ func handleInput(
 	}
 }
 
-func handleOutput(
+// scanStreamIntoChannel reads lines from a stream, and writes them
+// to a channel, alerting on backpressure from the channel.
+// When finished, it closes the channel, and calls done on the waitGroup.
+// It will send a signal on chDone only if it has trouble writing
+// into the channel.
+func scanStreamIntoChannel(
+	name string,
+	chStream chan<- string,
+	scanner *bufio.Scanner,
 	wg *sync.WaitGroup,
 	chDone chan<- error,
 	consumerTimeout time.Duration,
-	chStream chan<- string,
-	name string,
-	scanner *bufio.Scanner,
 ) {
+	defer func() {
+		close(chStream)
+		wg.Done()
+	}()
 	logger.Printf("%s; awaiting data from subprocess...", name)
 	count := 0
 	timer := time.NewTimer(consumerTimeout)
 	for scanner.Scan() {
 		line := scanner.Text()
 		count++
-		logger.Printf("%s; have read line #%d: %q", name, count, abbrev(line))
+		logger.Printf("%s; just read line #%d: %q", name, count, abbrev(line))
 		if !timer.Stop() {
 			logger.Printf("%s; backpressure timer draining", name)
 			<-timer.C
@@ -197,7 +216,7 @@ func handleOutput(
 		logger.Printf("%s; backpressure timer reset", name)
 		select {
 		case chStream <- line:
-			logger.Printf("%s; forwarded line", name)
+			logger.Printf("%s; forwarded line to infra", name)
 			// Yay, the infrastructure processing the subprocess' output
 			// is alive and reading this channel.
 		case <-timer.C:
@@ -205,23 +224,18 @@ func handleOutput(
 			// Something should drain chStream, even if only to discard
 			// the strings to /dev/null.
 			// If the stream channel's buffer fills up, this loop
-			// over Scan() won't finish, which means a call to
-			// cmd.Wait() will block. This is the exit hatch to
+			// over Scan() won't finish, which means that the call to
+			// cmd.Wait() above will block. This is the exit hatch to
 			// that particular deadlock.
 			logger.Printf(
-				"%s; backpressure consumerTimeout=%s elapsed",
-				name, consumerTimeout)
+				"%s; backpressure consumerTimeout=%s elapsed after line %d",
+				name, consumerTimeout, count)
 			chDone <- paramErr(
 				"consumerTimeout=%s elapsed awaiting consumer on chan %s",
 				consumerTimeout, name)
-			close(chStream)
-			wg.Done()
 			return
 		}
 		logger.Printf("%s; awaiting data from subprocess...", name)
 	}
-	logger.Printf("%s; scan done; closing forwarding channel", name)
-	close(chStream)
-	logger.Printf("%s; successfully consumed %d lines", name, count)
-	wg.Done()
+	logger.Printf("%s; scan completed; consumed %d lines", name, count)
 }

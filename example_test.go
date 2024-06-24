@@ -7,7 +7,10 @@ import (
 	"github.com/monopole/shexec/channeler"
 )
 
-const unlikelyWord = "supercalifragilisticexpialidocious"
+const (
+	unlikelyStdOut = "quantumHallEffect"
+	unlikelyStdErr = "Betelgeuse"
+)
 
 // An example using /bin/sh, a shell that's available on most platforms.
 func Example_binShHappy() {
@@ -17,8 +20,8 @@ func Example_binShHappy() {
 			Args: []string{"-e"},
 		},
 		SentinelOut: Sentinel{
-			C: "echo " + unlikelyWord,
-			V: unlikelyWord,
+			C: "echo " + unlikelyStdOut,
+			V: unlikelyStdOut,
 		},
 	})
 	err := sh.Start(timeOutShort)
@@ -50,8 +53,8 @@ func Example_binShAllowError() {
 			// No "-e"; keep going on error.
 		},
 		SentinelOut: Sentinel{
-			C: "echo " + unlikelyWord,
-			V: unlikelyWord,
+			C: "echo " + unlikelyStdOut,
+			V: unlikelyStdOut,
 		},
 	})
 	err := sh.Start(timeOutShort)
@@ -88,8 +91,12 @@ func Example_binShDieOnError() {
 			Args: []string{"-e"},
 		},
 		SentinelOut: Sentinel{
-			C: "echo " + unlikelyWord,
-			V: unlikelyWord,
+			C: "echo " + unlikelyStdOut,
+			V: unlikelyStdOut,
+		},
+		SentinelErr: Sentinel{
+			C: "echo " + unlikelyStdErr + " 1>&2",
+			V: unlikelyStdErr,
 		},
 		EnableDetailedLogging: true,
 	})
@@ -135,8 +142,8 @@ func Example_binShTimeout() {
 			Args: []string{"-e"},
 		},
 		SentinelOut: Sentinel{
-			C: "echo " + unlikelyWord,
-			V: unlikelyWord,
+			C: "echo " + unlikelyStdOut,
+			V: unlikelyStdOut,
 		},
 	})
 	err := sh.Start(timeOutShort)
@@ -171,8 +178,8 @@ var (
 
 	// An unknown command is a good stdErr sentinel for conch.
 	sentinelUnknownCommand = Sentinel{
-		C: unlikelyWord,
-		V: `unrecognized command: "` + unlikelyWord + `"`,
+		C: unlikelyStdOut,
+		V: `unrecognized command: "` + unlikelyStdOut + `"`,
 	}
 )
 
