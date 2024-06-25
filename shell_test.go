@@ -21,12 +21,12 @@ func makeConchParams() Parameters {
 				"--disable-prompt",
 			}},
 		SentinelOut: Sentinel{
-			C: "echo " + unlikelyWord,
-			V: unlikelyWord,
+			C: "echo " + unlikelyStdOut,
+			V: unlikelyStdOut,
 		},
 		SentinelErr: Sentinel{
-			C: unlikelyWord,
-			V: `unrecognized command: "` + unlikelyWord + `"`,
+			C: unlikelyStdOut,
+			V: `unrecognized command: "` + unlikelyStdOut + `"`,
 		},
 	}
 }
@@ -51,7 +51,7 @@ func TestShellNoSentinelOut(t *testing.T) {
 func TestShellNoSentinelOutValue(t *testing.T) {
 	sh := NewShell(Parameters{
 		Params:      channeler.Params{Path: "go"},
-		SentinelOut: Sentinel{C: "echo " + unlikelyWord},
+		SentinelOut: Sentinel{C: "echo " + unlikelyStdOut},
 	})
 	if err := sh.Start(timeOutShort); assert.Error(t, err) {
 		assert.Contains(t, err.Error(),

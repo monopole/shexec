@@ -2,12 +2,16 @@ package shexec_test
 
 import (
 	"fmt"
+	"strings"
 
 	. "github.com/monopole/shexec"
 	"github.com/monopole/shexec/channeler"
 )
 
-const unlikelyWord = "supercalifragilisticexpialidocious"
+const (
+	unlikelyStdOut = "quantumHallEffect"
+	unlikelyStdErr = "Betelgeuse"
+)
 
 // An example using /bin/sh, a shell that's available on most platforms.
 func Example_binShHappy() {
@@ -17,8 +21,8 @@ func Example_binShHappy() {
 			Args: []string{"-e"},
 		},
 		SentinelOut: Sentinel{
-			C: "echo " + unlikelyWord,
-			V: unlikelyWord,
+			C: "echo " + unlikelyStdOut,
+			V: unlikelyStdOut,
 		},
 	})
 	err := sh.Start(timeOutShort)
@@ -50,8 +54,8 @@ func Example_binShAllowError() {
 			// No "-e"; keep going on error.
 		},
 		SentinelOut: Sentinel{
-			C: "echo " + unlikelyWord,
-			V: unlikelyWord,
+			C: "echo " + unlikelyStdOut,
+			V: unlikelyStdOut,
 		},
 	})
 	err := sh.Start(timeOutShort)
@@ -88,9 +92,14 @@ func Example_binShDieOnError() {
 			Args: []string{"-e"},
 		},
 		SentinelOut: Sentinel{
-			C: "echo " + unlikelyWord,
-			V: unlikelyWord,
+			C: "echo " + unlikelyStdOut,
+			V: unlikelyStdOut,
 		},
+		SentinelErr: Sentinel{
+			C: "echo " + unlikelyStdErr + " 1>&2",
+			V: unlikelyStdErr,
+		},
+		//EnableDetailedLogging: true,
 	})
 	err := sh.Start(timeOutShort)
 	assertNoErr(err)
@@ -99,21 +108,30 @@ func Example_binShDieOnError() {
 echo alpha
 which cat
 `)))
-	assertNoErr(sh.Run(timeOutLong,
-		NewLabellingCommander(`
-sleep 1
-which ls
-`)))
-	assertErr(sh.Run(timeOutShort,
-		NewLabellingCommander(`
-which thisCommandDoesNotExist
-`,
-		)))
+	c := NewLabellingCommander(`
+echo "this is output on stderr with no failure"  1>&2
+`)
+	assertNoErr(sh.Run(timeOutShort, c))
 
-	// Output:
+	c = NewLabellingCommander(`
+echo "this is output on stdout with a failure"
+echo "this is output on stderr with a failure"  1>&2
+exit 1
+`)
+	err = sh.Run(timeOutShort, c)
+	if err == nil {
+		panic("expected an error.")
+	}
+	if !strings.Contains(err.Error(), "closed before sentinel") {
+		panic(err)
+	}
+
+	// Unordered output:
 	// out: alpha
 	// out: /usr/bin/cat
-	// out: /usr/bin/ls
+	// err: this is output on stderr with no failure
+	// err: this is output on stderr with a failure
+	// out: this is output on stdout with a failure
 }
 
 func Example_binShTimeout() {
@@ -123,8 +141,8 @@ func Example_binShTimeout() {
 			Args: []string{"-e"},
 		},
 		SentinelOut: Sentinel{
-			C: "echo " + unlikelyWord,
-			V: unlikelyWord,
+			C: "echo " + unlikelyStdOut,
+			V: unlikelyStdOut,
 		},
 	})
 	err := sh.Start(timeOutShort)
@@ -159,8 +177,8 @@ var (
 
 	// An unknown command is a good stdErr sentinel for conch.
 	sentinelUnknownCommand = Sentinel{
-		C: unlikelyWord,
-		V: `unrecognized command: "` + unlikelyWord + `"`,
+		C: unlikelyStdOut,
+		V: `unrecognized command: "` + unlikelyStdOut + `"`,
 	}
 )
 

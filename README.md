@@ -49,13 +49,12 @@ commands, e.g. `bash`, and emits lines of output on
 The purpose of a shell, as opposed to a single-purpose
 program that doesn't prompt for commands,
 is to allow state that endures over multiple commands.
-
-State contains things like authentication, authorization,
+The state contains things like authentication, authorization,
 secrets obtained from vaults,
 caches, database connections, etc.
 
 A shell lets a user pay to build that state once,
-then run many commands in the context of that state.
+then run multiple commands in the context of that state.
 
 ### Commands influence commands
 
@@ -141,8 +140,8 @@ Such a command
 Example:
 
 > ```
-> $ echo "rumpelstiltskin"
-> rumpelstiltskin
+> $ echo "rumpelstiltskinOut"
+> rumpelstiltskinOut
 > ```
 
 Commands that print a program's version, a help message,
@@ -162,15 +161,10 @@ command for `stdErr`.
 This command differs from the `stdOut` sentinel only
 in that its output goes to `stdErr`.
 
-Usually a shell will complain to `stdErr` if it sees
-a command it doesn't recognize, meaning that
-an unrecognized command is also a good sentinel
-command for `stdErr`.
-
 Example:
 > ```
-> $ rumpelstiltskin
-> rumpelstiltskin: command not found
+> $ echo "rumpelstiltskinErr" 1>&2
+> rumpelstiltskinErr
 > ```
 
 ### Command results

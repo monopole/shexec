@@ -52,12 +52,11 @@ type Params struct {
 
 	// InfraConsumerTimeout is how long to wait for data from stdOut
 	// or stdErr to be consumed by the infrastructure (the parser).
-	// This is effectively an exit hatch if the parser or
-	// some other aspect of the infrastructure (not the subprocess)
-	// is taking too long.
+	// This is an exit hatch if the parser or some other aspect of
+	// the infrastructure (not the subprocess) is taking too long.
 	// To avoid timeouts, increase buffer BuffSizeOut and/or
 	// BuffSizeErr and/or consume output faster.
-	// This is an infrastructure parameter, not really meant
+	// This is an infrastructure parameter. It's not meant
 	// for use by a client.
 	InfraConsumerTimeout time.Duration
 }

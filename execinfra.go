@@ -216,11 +216,21 @@ func (eInf *execInfra) fireOffSentinelFilters(
 	return gotSentinels
 }
 
+// scanForSentinel is a thread that reads from a channel (stdOut or stdErr)
+// and looks for sentinel response values.
+// When a line has a sentinel value, the command parser is closed, and
+// sentinelWait.Done is called signalling that a sentinel has been acquired
+// and the thread ends happily.
+// If the line doesn't have a sentinel, it's forwarded to the parser and the
+// thread continues scanning and forwarding.
+// If the input channel closes without detection of a sentinel value, an error
+// is dumped into chErr.
+//
 //nolint:gocognit
 func scanForSentinel(
 	stream <-chan string,
 	name string,
-	sentWaiter *sync.WaitGroup,
+	sentinelWait *sync.WaitGroup,
 	parser io.WriteCloser,
 	senValue string,
 	chErr chan<- error,
@@ -229,13 +239,14 @@ func scanForSentinel(
 	for line := range stream {
 		lgr.Printf("scan %s; got line: %q", name, abbrev(line))
 		if p := strings.TrimSuffix(line, senValue); len(p) < len(line) {
-			// Sentinel value found, so immediately stop reading stream.
-			// If the sentinel value is empty, this block never
-			// executes, so the stream will be continually consumed,
-			// which would be bad.
+			// Sentinel value found at end of line.
+			// Stop reading stream and return.
 			lgr.Printf(
 				"scan %s; matched sentinel %q to end of line", name, senValue)
 			if len(p) > 0 {
+				// Oops, we have something on the command line *before*
+				// the sentinel - send it to the parser as it might be
+				// a valid command.
 				lgr.Printf("scan %s; writing partial line %q", name, abbrev(p))
 				if _, err := parser.Write([]byte(p)); err != nil {
 					chErr <- shErrCaused(
@@ -247,25 +258,29 @@ func scanForSentinel(
 			}
 			lgr.Printf("scan %s; sentinel in hand, closing", name)
 			if err := parser.Close(); err != nil {
-				chErr <- shErrCaused(err, "problem closing %s parser", name)
+				chErr <- shErrCaused(err, "problem (1) closing %s parser", name)
 				return
 			}
-			sentWaiter.Done()
+			sentinelWait.Done()
 			// This is the happy exit.
 			lgr.Printf("scan %s; happily closed", name)
 			return
 		}
-		lgr.Printf("scan %s; forwarding line (no sentinel %q)", name, senValue)
+		lgr.Printf(
+			"scan %s; forwarding non-sentinel line %q", name, abbrev(line))
 		// Pass the data on.
 		if _, err := parser.Write([]byte(line)); err != nil {
 			chErr <- shErrCaused(
-				err, "problem writing line %q to %s parser", line, name)
+				err, "problem writing line %q to %s parser", abbrev(line), name)
 			return
 		}
 		lgr.Printf("scan %s; awaiting process output", name)
 	}
-	lgr.Printf("scan %s; stream ended too soon", name)
-	// Stream ended too soon. This is the unhappy exit.
-	// It's likely that the subprocess crashed.
+	if err := parser.Close(); err != nil {
+		chErr <- shErrCaused(err, "problem (2) closing %s parser", name)
+		return
+	}
+	lgr.Printf("%s closed before sentinel %q found", name, senValue)
+	// It's likely that the subprocess crashed/ended on error.
 	chErr <- shErr("%s closed before sentinel %q found", name, senValue)
 }
